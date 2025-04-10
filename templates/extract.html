@@ -80,7 +80,7 @@
                                     <ul class="small">
                                         <li><strong>field_name</strong> - Name of the field to extract</li>
                                         <li><strong>search_pattern</strong> - Pattern to search for</li>
-                                        <li><strong>extraction_type</strong> (optional) - exact, regex, or after_pattern</li>
+                                        <li><strong>extraction_type</strong> (optional) - exact, regex, after_pattern, or nlp</li>
                                         <li><strong>context_before</strong> (optional) - Context before the pattern</li>
                                         <li><strong>context_after</strong> (optional) - Context after the pattern</li>
                                         <li><strong>instructions</strong> (optional) - Additional instructions</li>
@@ -147,11 +147,12 @@
                                         <li><em>exact</em> - Find the exact search pattern</li>
                                         <li><em>regex</em> - Use regular expression pattern matching</li>
                                         <li><em>after_pattern</em> - Extract text that follows the pattern</li>
+                                        <li><em>nlp</em> - Use natural language instructions to extract information</li>
                                     </ul>
                                 </li>
                                 <li><strong>context_before</strong> (optional) - Text that should appear before the pattern</li>
                                 <li><strong>context_after</strong> (optional) - Text that should appear after the pattern</li>
-                                <li><strong>instructions</strong> (optional) - Additional extraction instructions</li>
+                                <li><strong>instructions</strong> (optional) - Natural language instructions or additional context (important for NLP extraction)</li>
                             </ul>
                         </div>
                     </div>
@@ -178,10 +179,39 @@
                 </div>
                 
                 <div class="accordion-item">
+                    <h2 class="accordion-header" id="headingNLP">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#collapseNLP" aria-expanded="false" aria-controls="collapseNLP">
+                            3. Using Natural Language Instructions
+                        </button>
+                    </h2>
+                    <div id="collapseNLP" class="accordion-collapse collapse" 
+                         aria-labelledby="headingNLP" data-bs-parent="#extractionGuide">
+                        <div class="accordion-body">
+                            <p>To use the NLP extraction feature:</p>
+                            <ul>
+                                <li>Set <strong>extraction_type</strong> to <code>nlp</code> in your Excel file</li>
+                                <li>In the <strong>instructions</strong> column, provide a clear description of what to extract, such as:
+                                    <ul>
+                                        <li>"Extract the invoice total amount"</li>
+                                        <li>"Find the customer's full address"</li>
+                                        <li>"Extract the shipping date from this document"</li>
+                                        <li>"Locate the policy number in this insurance document"</li>
+                                    </ul>
+                                </li>
+                                <li>The <strong>search_pattern</strong> field can be used to provide additional context if needed</li>
+                                <li>The system will analyze the document semantically to find the information you requested</li>
+                                <li>Unlike pattern matching, NLP extraction can understand the meaning of content and identify relevant information even when the exact wording varies</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="accordion-item">
                     <h2 class="accordion-header" id="headingThree">
                         <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
                                 data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                            3. Review Results
+                            4. Review Results
                         </button>
                     </h2>
                     <div id="collapseThree" class="accordion-collapse collapse" 

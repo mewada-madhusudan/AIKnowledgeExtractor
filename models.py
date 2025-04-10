@@ -38,6 +38,8 @@ class ExtractionRule(db.Model):
     description = db.Column(db.Text, nullable=True)
     pattern = db.Column(db.String(255), nullable=False)
     context = db.Column(db.Text, nullable=True)
+    extraction_type = db.Column(db.String(50), default='exact')  # 'exact', 'regex', 'after_pattern', 'nlp'
+    instructions = db.Column(db.Text, nullable=True)  # For NLP-based instructions
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     
     def __repr__(self):

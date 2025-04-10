@@ -60,6 +60,9 @@ document_processor = DocumentProcessor([
     ImageProcessor()
 ])
 
+# Initialize the pattern extractor
+pattern_extractor = PatternExtractor()
+
 
 def allowed_file(filename):
     """Check if the file has an allowed extension"""
@@ -136,11 +139,8 @@ def extract_data():
             excel_filepath = os.path.join(app.config['UPLOAD_FOLDER'], excel_filename)
             excel_file.save(excel_filepath)
             
-            # Create extractor
-            extractor = PatternExtractor()
-            
             # Load rules from Excel
-            rules = extractor.load_rules_from_excel(excel_filepath)
+            rules = pattern_extractor.load_rules_from_excel(excel_filepath)
             
             # Store rules in session for later use
             session['extraction_rules'] = rules
@@ -168,9 +168,6 @@ def show_results():
         return redirect(url_for('extract_data'))
     
     try:
-        # Create extractor
-        extractor = PatternExtractor()
-        
         # Get documents
         documents = Document.query.filter(Document.id.in_(doc_ids)).all()
         
@@ -188,7 +185,7 @@ def show_results():
             }
             
             # Extract data using rules
-            doc_results = extractor.extract_from_document(doc_content, rules)
+            doc_results = pattern_extractor.extract_from_document(doc_content, rules)
             results.extend(doc_results)
         
         # Clear session data

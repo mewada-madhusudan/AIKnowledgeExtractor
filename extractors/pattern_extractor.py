@@ -2,11 +2,16 @@ import re
 import logging
 import pandas as pd
 from collections import defaultdict
+from extractors.nlp_extractor import NLPExtractor
 
 logger = logging.getLogger(__name__)
 
 class PatternExtractor:
     """Class for extracting data based on patterns and instructions"""
+    
+    def __init__(self):
+        """Initialize extractor components"""
+        self.nlp_extractor = NLPExtractor()
     
     def load_rules_from_excel(self, excel_path):
         """
@@ -105,7 +110,25 @@ class PatternExtractor:
             # Determine extraction type
             extraction_type = rule.get('extraction_type', 'exact').lower()
             
-            if extraction_type == 'regex':
+            if extraction_type == 'nlp':
+                # Use NLP-based extraction with natural language instructions
+                # If pattern is empty but instructions exist, use only instructions
+                instructions = rule.get('instructions', '')
+                if not instructions and pattern:
+                    # If no specific instructions, use the pattern as instructions
+                    instructions = f"Extract {pattern} from the text"
+                
+                # Use our NLP extractor with the instructions
+                nlp_results = self.nlp_extractor.extract_from_text(text, instructions)
+                
+                # Convert NLP results to the expected format
+                for result in nlp_results:
+                    matches.append({
+                        'value': result['value'],
+                        'context': result['context']
+                    })
+            
+            elif extraction_type == 'regex':
                 # Use regex pattern directly
                 regex = re.compile(pattern, re.IGNORECASE)
                 for match in regex.finditer(text):

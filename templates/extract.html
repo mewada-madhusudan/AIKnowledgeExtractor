@@ -68,6 +68,11 @@
                             <input type="file" class="form-control" id="excel-file" name="excel_file" 
                                    accept=".xlsx,.xls" required>
                             <div class="form-text">Required columns: field_name, search_pattern</div>
+                            <div class="mt-2">
+                                <a href="{{ url_for('static', filename='sample_extraction_rules.xlsx') }}" class="btn btn-sm btn-outline-info">
+                                    <i class="fas fa-download me-1"></i> Download Sample Rules File
+                                </a>
+                            </div>
                         </div>
                         
                         <div class="mb-4">

@@ -1,8 +1,6 @@
-import logging
 import pytesseract
 from PIL import Image
 
-logger = logging.getLogger(__name__)
 
 class ImageProcessor:
     """Processor for image files (JPG, PNG, etc.)"""
@@ -28,9 +26,8 @@ class ImageProcessor:
             # Use OCR to extract text
             text = pytesseract.image_to_string(image)
             
-            # Images are treated as single pages
+            # Return as a single page
             return {1: text}
             
         except Exception as e:
-            logger.error(f"Error extracting text from image: {str(e)}")
-            raise
+            raise Exception(f"Failed to extract text from image: {str(e)}")

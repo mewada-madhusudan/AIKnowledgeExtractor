@@ -1,1 +1,1 @@
-# This file makes processors a package
+# processors package

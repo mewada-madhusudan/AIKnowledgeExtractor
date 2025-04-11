@@ -1,98 +1,74 @@
-/* Additional custom styles beyond Bootstrap */
+/* Custom CSS for AI Document Processor */
 
-/* Document card styles */
-.document-card {
-  transition: all 0.2s ease-in-out;
+/* Circle style for steps */
+.circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
 }
 
-.document-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+.circle span {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: bold;
 }
 
-/* Page content styles */
-.page-content {
-  font-family: monospace;
-  white-space: pre-wrap;
-  max-height: 300px;
-  overflow-y: auto;
+/* Styled pre for document content */
+pre {
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
-/* Results table styles */
-.results-table th {
-  position: sticky;
-  top: 0;
-  background-color: var(--bs-dark);
-  z-index: 10;
+/* Table styles */
+.table-responsive {
+    border-radius: 5px;
+    overflow: hidden;
 }
 
-/* Process steps */
-.process-step {
-  position: relative;
-  padding-bottom: 2rem;
+/* Card hover effect */
+.card {
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
-.process-step::after {
-  content: '';
-  position: absolute;
-  top: 3rem;
-  left: 50%;
-  height: calc(100% - 3rem);
-  width: 2px;
-  background-color: var(--bs-primary);
-  transform: translateX(-50%);
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
-.process-step:last-child::after {
-  display: none;
+/* Footer styling */
+.footer {
+    position: relative;
+    margin-top: 50px;
+    border-top: 1px solid var(--bs-border-color);
 }
 
-/* Custom badges */
-.badge-outline-primary {
-  color: var(--bs-primary);
-  border: 1px solid var(--bs-primary);
-  background-color: transparent;
+/* Custom button hover effect */
+.btn {
+    transition: all 0.3s;
 }
 
-.badge-outline-success {
-  color: var(--bs-success);
-  border: 1px solid var(--bs-success);
-  background-color: transparent;
+.btn:hover {
+    transform: translateY(-2px);
 }
 
-/* File preview */
-.file-preview {
-  border: 2px dashed var(--bs-gray);
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  text-align: center;
-  transition: all 0.2s ease;
-}
-
-.file-preview:hover {
-  border-color: var(--bs-primary);
-}
-
-/* Search highlight */
-.search-highlight {
-  background-color: var(--bs-warning);
-  color: var(--bs-dark);
-  padding: 0.1rem 0.2rem;
-  border-radius: 0.2rem;
-}
-
-/* Context display */
-.context-display {
-  max-height: 200px;
-  overflow-y: auto;
-  font-size: 0.9rem;
-  border-left: 3px solid var(--bs-info);
-  padding-left: 0.75rem;
-}
-
-/* Feature icon */
-.feature-icon {
-  width: 4rem;
-  height: 4rem;
-  border-radius: 0.75rem;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 20px;
+    }
+    
+    .circle {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .circle span {
+        font-size: 1rem;
+    }
 }

@@ -1,91 +1,81 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
+
+{% block title %} - Home{% endblock %}
 
 {% block content %}
-<div class="px-4 py-5 my-5 text-center">
-    <h1 class="display-5 fw-bold text-body-emphasis">AI Document Processor</h1>
-    <div class="col-lg-6 mx-auto">
-        <p class="lead mb-4">
-            Extract specific data from documents using search patterns or natural language instructions.
-            Upload your documents, define extraction rules in plain English, and get precisely the data you need.
-        </p>
-        <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
-            <a href="{{ url_for('list_documents') }}" class="btn btn-primary btn-lg px-4 gap-3">
-                <i class="fas fa-file-upload me-2"></i> Upload Documents
-            </a>
-            <a href="{{ url_for('extract_data') }}" class="btn btn-outline-secondary btn-lg px-4">
-                <i class="fas fa-search me-2"></i> Extract Data
-            </a>
-        </div>
-    </div>
-</div>
-
-<div class="container px-4 py-5" id="featured-3">
-    <h2 class="pb-2 border-bottom">How It Works</h2>
-    <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
-        <div class="feature col">
-            <div class="feature-icon bg-primary bg-gradient d-inline-flex align-items-center justify-content-center text-white fs-2 mb-3">
-                <i class="fas fa-file-upload"></i>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary text-white">
+                <h1 class="card-title text-center">
+                    <i class="fas fa-file-alt me-2"></i>
+                    AI Document Processor
+                </h1>
             </div>
-            <h3 class="fs-2">1. Upload Documents</h3>
-            <p>Upload your documents (PDF, DOCX, or images). Our system will process them, extract text, and create a searchable knowledge base.</p>
-            <a href="{{ url_for('list_documents') }}" class="icon-link d-inline-flex align-items-center">
-                Upload Documents
-                <i class="fas fa-chevron-right ms-2"></i>
-            </a>
-        </div>
-        <div class="feature col">
-            <div class="feature-icon bg-primary bg-gradient d-inline-flex align-items-center justify-content-center text-white fs-2 mb-3">
-                <i class="fas fa-table"></i>
-            </div>
-            <h3 class="fs-2">2. Define Extraction Rules</h3>
-            <p>Upload an Excel file with search patterns or natural language instructions. Just describe what you want to extract in plain English!</p>
-            <a href="{{ url_for('extract_data') }}" class="icon-link d-inline-flex align-items-center">
-                Define Rules
-                <i class="fas fa-chevron-right ms-2"></i>
-            </a>
-        </div>
-        <div class="feature col">
-            <div class="feature-icon bg-primary bg-gradient d-inline-flex align-items-center justify-content-center text-white fs-2 mb-3">
-                <i class="fas fa-magic"></i>
-            </div>
-            <h3 class="fs-2">3. Extract Data</h3>
-            <p>The system will intelligently process your documents using AI to understand both patterns and human-readable instructions, extracting exactly the data you need.</p>
-            <a href="#" class="icon-link d-inline-flex align-items-center">
-                View Results
-                <i class="fas fa-chevron-right ms-2"></i>
-            </a>
-        </div>
-    </div>
-</div>
-
-<div class="container px-4 py-5" id="hanging-icons">
-    <h2 class="pb-2 border-bottom">Key Features</h2>
-    <div class="row g-4 py-5 row-cols-1 row-cols-lg-3">
-        <div class="col d-flex align-items-start">
-            <div class="icon-square text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
-                <i class="fas fa-file-pdf"></i>
-            </div>
-            <div>
-                <h3 class="fs-4">Multiple Document Types</h3>
-                <p>Process PDF, DOCX, and image files with automatic OCR for scanned documents.</p>
-            </div>
-        </div>
-        <div class="col d-flex align-items-start">
-            <div class="icon-square text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
-                <i class="fas fa-search-plus"></i>
-            </div>
-            <div>
-                <h3 class="fs-4">Advanced Search & NLP</h3>
-                <p>Support for exact matching, regular expressions, context-aware extraction, and natural language instructions.</p>
-            </div>
-        </div>
-        <div class="col d-flex align-items-start">
-            <div class="icon-square text-body-emphasis bg-body-secondary d-inline-flex align-items-center justify-content-center fs-4 flex-shrink-0 me-3">
-                <i class="fas fa-file-export"></i>
-            </div>
-            <div>
-                <h3 class="fs-4">Export Results</h3>
-                <p>Export your extracted data to CSV format for further analysis or integration.</p>
+            <div class="card-body">
+                <p class="lead text-center">Extract data from your documents using AI and natural language processing.</p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body text-center">
+                                <i class="fas fa-upload fa-3x mb-3 text-primary"></i>
+                                <h3>Upload Documents</h3>
+                                <p>Upload PDF, DOCX, or image files to extract text.</p>
+                                <a href="{{ url_for('list_documents') }}" class="btn btn-primary">
+                                    <i class="fas fa-upload me-2"></i> Get Started
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body text-center">
+                                <i class="fas fa-search fa-3x mb-3 text-primary"></i>
+                                <h3>Extract Data</h3>
+                                <p>Extract specific data using patterns or natural language instructions.</p>
+                                <a href="{{ url_for('extract_data') }}" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i> Extract Data
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="mt-4">
+                    <h3 class="text-center mb-4">How It Works</h3>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <div class="circle bg-primary mb-3">
+                                    <span>1</span>
+                                </div>
+                                <h4>Upload Documents</h4>
+                                <p>Upload your PDF, DOCX, or image files to the system.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <div class="circle bg-primary mb-3">
+                                    <span>2</span>
+                                </div>
+                                <h4>Define Extraction Rules</h4>
+                                <p>Create rules with patterns or natural language instructions.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <div class="circle bg-primary mb-3">
+                                    <span>3</span>
+                                </div>
+                                <h4>Extract & Export</h4>
+                                <p>View extracted data and export to CSV or other formats.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

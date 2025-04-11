@@ -1,239 +1,171 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
+
+{% block title %} - Extract Data{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row mb-4">
-        <div class="col">
-            <h2>Extract Data</h2>
-            <p class="text-muted">Extract specific data from your documents using search patterns</p>
-        </div>
+<div class="card shadow">
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-search me-2"></i>
+            Extract Data from Documents
+        </h5>
     </div>
-    
-    {% if documents %}
-    <!-- Extraction Form -->
-    <form action="{{ url_for('extract_data') }}" method="post" enctype="multipart/form-data">
+    <div class="card-body">
         <div class="row">
-            <!-- Document Selection -->
-            <div class="col-md-6 mb-4">
-                <div class="card bg-dark h-100">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-file-alt me-2"></i>
-                            Step 1: Select Documents
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="mb-3">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="select-all">
-                                <label class="form-check-label" for="select-all">
-                                    <strong>Select All Documents</strong>
-                                </label>
-                            </div>
-                            <hr>
-                            <div class="document-list" style="max-height: 300px; overflow-y: auto;">
-                                {% for document in documents %}
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" name="document_ids" 
-                                           id="doc-{{ document.id }}" value="{{ document.id }}">
-                                    <label class="form-check-label" for="doc-{{ document.id }}">
-                                        <i class="fas fa-file-{% if document.file_type == 'pdf' %}pdf{% elif document.file_type == 'docx' %}word{% else %}image{% endif %} me-2"></i>
-                                        {{ document.filename }} 
-                                        <span class="badge bg-secondary ms-1">{{ document.page_count }} pages</span>
-                                    </label>
-                                </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                        <div class="alert alert-info">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">
                             <i class="fas fa-info-circle me-2"></i>
-                            <span id="selected-count">0</span> document(s) selected
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Extraction Rules -->
-            <div class="col-md-6 mb-4">
-                <div class="card bg-dark h-100">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-table me-2"></i>
-                            Step 2: Upload Extraction Rules
+                            How to Extract Data
                         </h5>
                     </div>
                     <div class="card-body">
-                        <div class="mb-3">
-                            <label for="excel-file" class="form-label">Upload Excel File with Extraction Rules</label>
-                            <input type="file" class="form-control" id="excel-file" name="excel_file" 
-                                   accept=".xlsx,.xls" required>
-                            <div class="form-text">Required columns: field_name, search_pattern</div>
-                            <div class="mt-2">
-                                <a href="{{ url_for('static', filename='sample_extraction_rules.xlsx') }}" class="btn btn-sm btn-outline-info">
-                                    <i class="fas fa-download me-1"></i> Download Sample Rules File
-                                </a>
-                            </div>
+                        <ol class="list-group list-group-numbered mb-3">
+                            <li class="list-group-item">Select one or more documents from the list below</li>
+                            <li class="list-group-item">Upload an Excel file with extraction rules</li>
+                            <li class="list-group-item">The system will extract data based on your rules</li>
+                            <li class="list-group-item">Results can be exported or saved for later</li>
+                        </ol>
+                        
+                        <div class="alert alert-info">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-lightbulb me-2"></i>
+                                Natural Language Instructions
+                            </h6>
+                            <p class="mb-0">You can now use natural language instructions to extract data. Simply set the extraction_type to 'nlp' and provide your instructions in the instructions column.</p>
                         </div>
                         
-                        <div class="mb-4">
-                            <div class="card bg-dark-subtle">
-                                <div class="card-header">
-                                    <h6 class="mb-0">Excel File Format</h6>
-                                </div>
-                                <div class="card-body">
-                                    <p class="small mb-2">Your Excel file should have the following columns:</p>
-                                    <ul class="small">
-                                        <li><strong>field_name</strong> - Name of the field to extract</li>
-                                        <li><strong>search_pattern</strong> - Pattern to search for</li>
-                                        <li><strong>extraction_type</strong> (optional) - exact, regex, after_pattern, or nlp</li>
-                                        <li><strong>context_before</strong> (optional) - Context before the pattern</li>
-                                        <li><strong>context_after</strong> (optional) - Context after the pattern</li>
-                                        <li><strong>instructions</strong> (optional) - Additional instructions</li>
-                                    </ul>
-                                </div>
+                        <div class="text-center mt-3">
+                            <a href="{{ url_for('static', filename='sample_extraction_rules.xlsx') }}" class="btn btn-outline-primary">
+                                <i class="fas fa-download me-2"></i>
+                                Download Sample Rules
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-file-excel me-2"></i>
+                            Upload Extraction Rules
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form action="{{ url_for('show_results') }}" method="POST" enctype="multipart/form-data" id="extractionForm">
+                            <div class="mb-3">
+                                <label for="excel_file" class="form-label">Excel File with Extraction Rules</label>
+                                <input class="form-control" type="file" id="excel_file" name="excel_file" accept=".xlsx, .xls" required>
+                                <div class="form-text">Upload an Excel file with your extraction rules</div>
                             </div>
-                        </div>
+                            
+                            <div id="documentSelectionError" class="alert alert-danger d-none">
+                                Please select at least one document.
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search me-2"></i>
+                                Extract Data
+                            </button>
+                        </form>
                     </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Submit Button -->
-        <div class="row">
-            <div class="col text-center">
-                <button type="submit" class="btn btn-lg btn-primary mb-5" id="extract-button" disabled>
-                    <i class="fas fa-search me-2"></i>
-                    Extract Data
-                </button>
-            </div>
-        </div>
-    </form>
-    
-    {% else %}
-    <!-- No Documents Message -->
-    <div class="row">
-        <div class="col">
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                No documents available for extraction. Please upload documents first.
-            </div>
-            <div class="text-center mt-4">
-                <a href="{{ url_for('list_documents') }}" class="btn btn-primary">
-                    <i class="fas fa-upload me-2"></i>
-                    Upload Documents
-                </a>
-            </div>
-        </div>
-    </div>
-    {% endif %}
-    
-    <!-- How to Extract Section -->
-    <div class="row mt-5">
-        <div class="col">
-            <h3 class="mb-4">How to Extract Data</h3>
             
-            <div class="accordion" id="extractionGuide">
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingOne">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse" 
-                                data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-                            1. Prepare Your Excel File
-                        </button>
-                    </h2>
-                    <div id="collapseOne" class="accordion-collapse collapse show" 
-                         aria-labelledby="headingOne" data-bs-parent="#extractionGuide">
-                        <div class="accordion-body">
-                            <p>Create an Excel file with the following columns:</p>
-                            <ul>
-                                <li><strong>field_name</strong> - A descriptive name for the data you want to extract</li>
-                                <li><strong>search_pattern</strong> - The text pattern to search for in the document</li>
-                                <li><strong>extraction_type</strong> (optional):
-                                    <ul>
-                                        <li><em>exact</em> - Find the exact search pattern</li>
-                                        <li><em>regex</em> - Use regular expression pattern matching</li>
-                                        <li><em>after_pattern</em> - Extract text that follows the pattern</li>
-                                        <li><em>nlp</em> - Use natural language instructions to extract information</li>
-                                    </ul>
-                                </li>
-                                <li><strong>context_before</strong> (optional) - Text that should appear before the pattern</li>
-                                <li><strong>context_after</strong> (optional) - Text that should appear after the pattern</li>
-                                <li><strong>instructions</strong> (optional) - Natural language instructions or additional context (important for NLP extraction)</li>
-                            </ul>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-file-alt me-2"></i>
+                            Select Documents
+                        </h5>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="toggleSelectAll()">
+                                <i class="fas fa-check-square me-1"></i> Select All
+                            </button>
                         </div>
                     </div>
-                </div>
-                
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingTwo">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                                data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
-                            2. Select Documents
-                        </button>
-                    </h2>
-                    <div id="collapseTwo" class="accordion-collapse collapse" 
-                         aria-labelledby="headingTwo" data-bs-parent="#extractionGuide">
-                        <div class="accordion-body">
-                            <p>Choose which documents you want to extract data from:</p>
-                            <ul>
-                                <li>Use the checkboxes to select individual documents</li>
-                                <li>Use "Select All" to choose all available documents</li>
-                                <li>You can select multiple documents for batch extraction</li>
-                            </ul>
+                    <div class="card-body">
+                        {% if documents %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 50px;"></th>
+                                        <th>Document</th>
+                                        <th>Type</th>
+                                        <th>Pages</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for document in documents %}
+                                    <tr>
+                                        <td>
+                                            <div class="form-check">
+                                                <input class="form-check-input document-checkbox" type="checkbox" form="extractionForm" name="document_ids" value="{{ document.id }}" id="doc{{ document.id }}" onchange="updateSelectedCount()">
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <label for="doc{{ document.id }}" class="form-check-label">
+                                                {{ document.filename }}
+                                            </label>
+                                        </td>
+                                        <td><span class="badge bg-info">{{ document.file_type }}</span></td>
+                                        <td>{{ document.page_count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingNLP">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                                data-bs-target="#collapseNLP" aria-expanded="false" aria-controls="collapseNLP">
-                            3. Using Natural Language Instructions
-                        </button>
-                    </h2>
-                    <div id="collapseNLP" class="accordion-collapse collapse" 
-                         aria-labelledby="headingNLP" data-bs-parent="#extractionGuide">
-                        <div class="accordion-body">
-                            <p>To use the NLP extraction feature:</p>
-                            <ul>
-                                <li>Set <strong>extraction_type</strong> to <code>nlp</code> in your Excel file</li>
-                                <li>In the <strong>instructions</strong> column, provide a clear description of what to extract, such as:
-                                    <ul>
-                                        <li>"Extract the invoice total amount"</li>
-                                        <li>"Find the customer's full address"</li>
-                                        <li>"Extract the shipping date from this document"</li>
-                                        <li>"Locate the policy number in this insurance document"</li>
-                                    </ul>
-                                </li>
-                                <li>The <strong>search_pattern</strong> field can be used to provide additional context if needed</li>
-                                <li>The system will analyze the document semantically to find the information you requested</li>
-                                <li>Unlike pattern matching, NLP extraction can understand the meaning of content and identify relevant information even when the exact wording varies</li>
-                            </ul>
+                        <div class="mt-2">
+                            <span class="badge bg-primary" id="selectedCount">0 documents selected</span>
                         </div>
-                    </div>
-                </div>
-                
-                <div class="accordion-item">
-                    <h2 class="accordion-header" id="headingThree">
-                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
-                                data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
-                            4. Review Results
-                        </button>
-                    </h2>
-                    <div id="collapseThree" class="accordion-collapse collapse" 
-                         aria-labelledby="headingThree" data-bs-parent="#extractionGuide">
-                        <div class="accordion-body">
-                            <p>After extraction, you'll see a table with your results:</p>
-                            <ul>
-                                <li>Each row represents a found match in your documents</li>
-                                <li>Results include the document name, page number, and extracted value</li>
-                                <li>Context around each match is provided to verify accuracy</li>
-                                <li>You can export the results to CSV for further analysis</li>
-                            </ul>
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No documents available. Please <a href="{{ url_for('list_documents') }}">upload some documents</a> first.
                         </div>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add submit handler to validate document selection
+        document.getElementById('extractionForm').addEventListener('submit', function(e) {
+            const checkedBoxes = document.querySelectorAll('.document-checkbox:checked');
+            if (checkedBoxes.length === 0) {
+                e.preventDefault();
+                document.getElementById('documentSelectionError').classList.remove('d-none');
+            }
+        });
+        
+        // Initialize selected count
+        updateSelectedCount();
+    });
+    
+    function toggleSelectAll() {
+        const checkboxes = document.querySelectorAll('.document-checkbox');
+        const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
+        
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = anyUnchecked;
+        });
+        
+        updateSelectedCount();
+    }
+    
+    function updateSelectedCount() {
+        const count = document.querySelectorAll('.document-checkbox:checked').length;
+        document.getElementById('selectedCount').textContent = count + ' document' + (count !== 1 ? 's' : '') + ' selected';
+        document.getElementById('documentSelectionError').classList.add('d-none');
+    }
+</script>
 {% endblock %}

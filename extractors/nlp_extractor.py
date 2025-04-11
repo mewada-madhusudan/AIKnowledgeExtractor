@@ -1,22 +1,28 @@
 import re
-import logging
 import spacy
 import nltk
-from nltk.tokenize import word_tokenize, sent_tokenize
+from nltk.tokenize import sent_tokenize
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-from collections import Counter
 
-logger = logging.getLogger(__name__)
 
 class NLPExtractor:
     """Class for extracting data based on natural language instructions"""
     
     def __init__(self):
         """Initialize NLP components"""
-        self.nlp = spacy.load('en_core_web_sm')
-        self.stop_words = set(stopwords.words('english'))
-        self.lemmatizer = WordNetLemmatizer()
+        try:
+            # Load spaCy model
+            self.nlp = spacy.load('en_core_web_sm')
+            
+            # Initialize NLTK components
+            self.lemmatizer = WordNetLemmatizer()
+            self.stop_words = set(stopwords.words('english'))
+        except Exception as e:
+            print(f"Warning: Failed to initialize NLP components: {str(e)}")
+            self.nlp = None
+            self.lemmatizer = None
+            self.stop_words = None
     
     def extract_from_text(self, text, instructions):
         """
@@ -29,155 +35,209 @@ class NLPExtractor:
         Returns:
             dict: Extracted information with value and context
         """
-        try:
-            # Parse instructions with spaCy
-            doc_instructions = self.nlp(instructions)
-            
-            # Extract key entities and concepts from instructions
-            entities = [ent.text for ent in doc_instructions.ents]
-            key_phrases = self._extract_key_phrases(instructions)
-            
-            # Parse the target text
-            doc_text = self.nlp(text)
-            
-            # Extract sentences that might contain the requested information
-            relevant_sentences = self._find_relevant_sentences(doc_text, key_phrases, entities)
-            
-            if not relevant_sentences:
-                return []
-            
-            # Extract specific information from the relevant sentences
-            extraction_results = self._extract_from_sentences(relevant_sentences, instructions)
-            
-            return extraction_results
-            
-        except Exception as e:
-            logger.error(f"Error in NLP extraction: {str(e)}")
-            return []
+        if not self.nlp:
+            return {'value': '', 'context': 'NLP components not initialized'}
+        
+        # Process the text and instructions with spaCy
+        doc = self.nlp(text)
+        instructions_doc = self.nlp(instructions.lower())
+        
+        # Extract key phrases from instructions
+        key_phrases = self._extract_key_phrases(instructions)
+        
+        # Get entities from instructions
+        entities = [ent.text.lower() for ent in instructions_doc.ents]
+        
+        # Find sentences that might contain the requested information
+        relevant_sentences = self._find_relevant_sentences(doc, key_phrases, entities)
+        
+        if not relevant_sentences:
+            return {'value': '', 'context': 'No relevant information found'}
+        
+        # Extract specific information from the relevant sentences
+        extracted_info = self._extract_from_sentences(relevant_sentences, instructions)
+        
+        if not extracted_info:
+            # If no specific info found, return the most relevant sentence
+            most_relevant = relevant_sentences[0]
+            return {
+                'value': most_relevant.text.strip(),
+                'context': most_relevant.text.strip()
+            }
+        
+        return extracted_info
     
     def _extract_key_phrases(self, text):
         """Extract important phrases from the instructions"""
-        # Tokenize and remove stop words
-        tokens = word_tokenize(text.lower())
-        filtered_tokens = [self.lemmatizer.lemmatize(word) for word in tokens 
-                          if word.isalnum() and word not in self.stop_words]
-        
-        # Extract noun phrases using spaCy
+        # Convert to lowercase and tokenize
+        text = text.lower()
         doc = self.nlp(text)
-        noun_phrases = [chunk.text.lower() for chunk in doc.noun_chunks]
         
-        # Find important words based on POS tagging
-        important_words = []
+        key_phrases = []
+        
+        # Extract noun phrases
+        for chunk in doc.noun_chunks:
+            # Filter out stop words
+            phrase = ' '.join([token.text for token in chunk if token.text.lower() not in self.stop_words])
+            if phrase:
+                key_phrases.append(phrase)
+        
+        # Extract verbs with their objects
         for token in doc:
-            # Keep nouns, verbs, adjectives, and proper nouns
-            if token.pos_ in ['NOUN', 'VERB', 'ADJ', 'PROPN'] and token.is_alpha:
-                important_words.append(token.lemma_.lower())
+            if token.pos_ == 'VERB':
+                phrase_parts = [token.text]
+                for child in token.children:
+                    if child.dep_ in ('dobj', 'pobj'):
+                        phrase_parts.append(child.text)
+                
+                phrase = ' '.join(phrase_parts)
+                key_phrases.append(phrase)
         
-        # Combine all key phrases
-        all_phrases = set(filtered_tokens + important_words + noun_phrases)
-        return list(all_phrases)
+        # Extract specific action phrases like "extract", "find", "locate"
+        action_verbs = ['extract', 'find', 'locate', 'identify', 'get']
+        for token in doc:
+            if token.lemma_.lower() in action_verbs:
+                # Get the object of this action verb
+                for child in token.children:
+                    if child.dep_ in ('dobj', 'pobj'):
+                        phrase = child.text
+                        
+                        # Include any adjectives or modifiers
+                        for grandchild in child.children:
+                            if grandchild.dep_ in ('amod', 'compound'):
+                                phrase = f"{grandchild.text} {phrase}"
+                        
+                        if phrase:
+                            key_phrases.append(phrase)
+        
+        # Get named entities
+        for ent in doc.ents:
+            key_phrases.append(ent.text)
+        
+        # Clean up and deduplicate
+        key_phrases = [phrase.strip() for phrase in key_phrases if len(phrase.strip()) > 1]
+        key_phrases = list(set(key_phrases))
+        
+        return key_phrases
     
     def _find_relevant_sentences(self, doc, key_phrases, entities):
         """Find sentences in the text that might contain the requested information"""
-        relevant_sentences = []
+        # Split into sentences
+        sentences = list(doc.sents)
         
-        # Process each sentence
-        for sent in doc.sents:
-            sent_text = sent.text.strip()
-            if not sent_text:
-                continue
-                
-            # Check for key phrases and entities
-            relevance_score = 0
-            
-            # Check for entities
-            for entity in entities:
-                if entity.lower() in sent_text.lower():
-                    relevance_score += 3
+        # Score each sentence based on key phrases and entities
+        sentence_scores = []
+        
+        for sentence in sentences:
+            sentence_text = sentence.text.lower()
+            score = 0
             
             # Check for key phrases
             for phrase in key_phrases:
-                if phrase.lower() in sent_text.lower():
-                    relevance_score += 1
+                if phrase.lower() in sentence_text:
+                    score += 3
+                elif all(word in sentence_text for word in phrase.lower().split()):
+                    score += 2
             
-            # If sentence seems relevant, add it
-            if relevance_score > 0:
-                relevant_sentences.append({
-                    'text': sent_text,
-                    'score': relevance_score
-                })
+            # Check for entities
+            for entity in entities:
+                if entity in sentence_text:
+                    score += 2
+            
+            # Check for specific entity types that might be relevant
+            for ent in sentence.ents:
+                if ent.label_ in ['DATE', 'TIME', 'MONEY', 'PERCENT', 'QUANTITY', 'ORDINAL', 'CARDINAL']:
+                    score += 1
+                if ent.label_ in ['PERSON', 'ORG', 'GPE', 'LOC']:
+                    score += 1
+            
+            sentence_scores.append((sentence, score))
         
-        # Sort by relevance score (highest first)
-        relevant_sentences.sort(key=lambda x: x['score'], reverse=True)
+        # Sort by score and return the most relevant sentences
+        sentence_scores.sort(key=lambda x: x[1], reverse=True)
         
-        # Return the top most relevant sentences
-        return relevant_sentences[:5]
+        # Return top sentences with a score above 0
+        return [sent for sent, score in sentence_scores if score > 0]
     
     def _extract_from_sentences(self, sentences, instructions):
         """Extract specific information from the relevant sentences"""
-        results = []
-        instruction_doc = self.nlp(instructions)
+        instructions_lower = instructions.lower()
         
-        # Determine what types of information we're looking for
-        looking_for_date = any(token.lemma_ in ["date", "when", "time"] for token in instruction_doc)
-        looking_for_money = any(token.lemma_ in ["amount", "money", "cost", "price", "dollar"] for token in instruction_doc)
-        looking_for_person = any(token.lemma_ in ["person", "who", "name"] for token in instruction_doc)
-        looking_for_location = any(token.lemma_ in ["where", "location", "place", "address"] for token in instruction_doc)
-        looking_for_organization = any(token.lemma_ in ["organization", "company", "business"] for token in instruction_doc)
+        # Check if we're looking for specific entity types
+        entity_type_mapping = {
+            'date': ['DATE', 'TIME'],
+            'time': ['TIME', 'DATE'],
+            'money': ['MONEY', 'CARDINAL'],
+            'amount': ['MONEY', 'QUANTITY', 'CARDINAL'],
+            'percentage': ['PERCENT'],
+            'number': ['CARDINAL', 'ORDINAL', 'QUANTITY'],
+            'person': ['PERSON'],
+            'name': ['PERSON', 'ORG'],
+            'organization': ['ORG'],
+            'company': ['ORG'],
+            'location': ['LOC', 'GPE'],
+            'address': ['LOC', 'GPE'],
+            'city': ['GPE'],
+            'country': ['GPE']
+        }
         
-        # Process each relevant sentence
-        for sentence_obj in sentences:
-            sentence = sentence_obj['text']
-            sent_doc = self.nlp(sentence)
-            
-            # Check for different entity types based on what we're looking for
-            extracted_entities = []
-            
-            for ent in sent_doc.ents:
-                if looking_for_date and ent.label_ == "DATE":
-                    extracted_entities.append({"value": ent.text, "type": "DATE"})
-                elif looking_for_money and ent.label_ == "MONEY":
-                    extracted_entities.append({"value": ent.text, "type": "MONEY"})
-                elif looking_for_person and ent.label_ == "PERSON":
-                    extracted_entities.append({"value": ent.text, "type": "PERSON"})
-                elif looking_for_location and ent.label_ in ["GPE", "LOC"]:
-                    extracted_entities.append({"value": ent.text, "type": "LOCATION"})
-                elif looking_for_organization and ent.label_ == "ORG":
-                    extracted_entities.append({"value": ent.text, "type": "ORGANIZATION"})
-                # Always extract numeric values as they're often important
-                elif ent.label_ in ["CARDINAL", "QUANTITY", "PERCENT"]:
-                    extracted_entities.append({"value": ent.text, "type": ent.label_})
-            
-            # If no specific entities found, try to extract based on syntax
-            if not extracted_entities:
-                # Look for numbers if instructions mention numeric values
-                if any(word in instructions.lower() for word in ["number", "amount", "quantity", "how many"]):
-                    for token in sent_doc:
-                        if token.is_digit or token.like_num:
-                            extracted_entities.append({"value": token.text, "type": "NUMBER"})
-                
-                # Look for noun phrases if nothing else works
-                if not extracted_entities:
-                    noun_chunks = list(sent_doc.noun_chunks)
-                    if noun_chunks:
-                        best_chunk = max(noun_chunks, key=lambda chunk: len(chunk.text))
-                        extracted_entities.append({"value": best_chunk.text, "type": "PHRASE"})
-            
-            # Add extracted information to results
-            for entity in extracted_entities:
-                results.append({
-                    "value": entity["value"],
-                    "context": sentence,
-                    "entity_type": entity["type"]
-                })
+        target_entity_types = []
+        for key, entity_types in entity_type_mapping.items():
+            if key in instructions_lower:
+                target_entity_types.extend(entity_types)
         
-        # If no structured entities were found, return the most relevant sentence
-        if not results and sentences:
-            most_relevant = sentences[0]['text']
-            results.append({
-                "value": most_relevant,
-                "context": most_relevant,
-                "entity_type": "SENTENCE"
-            })
-            
-        return results
+        # Look for specific entities in the sentences
+        if target_entity_types:
+            for sentence in sentences:
+                for ent in sentence.ents:
+                    if ent.label_ in target_entity_types:
+                        # Return context with the sentence
+                        return {
+                            'value': ent.text,
+                            'context': sentence.text
+                        }
+        
+        # Check for specific patterns based on the instructions
+        
+        # Date patterns
+        if any(word in instructions_lower for word in ['date', 'when', 'time']):
+            date_pattern = r'\b(?:\d{1,2}[-/\.]\d{1,2}[-/\.]\d{2,4}|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{1,2},? \d{2,4}|\d{1,2} (?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]* \d{2,4})\b'
+            for sentence in sentences:
+                matches = re.findall(date_pattern, sentence.text, re.IGNORECASE)
+                if matches:
+                    return {
+                        'value': matches[0],
+                        'context': sentence.text
+                    }
+        
+        # Amount patterns
+        if any(word in instructions_lower for word in ['amount', 'total', 'sum', 'cost', 'price']):
+            amount_pattern = r'\$\s*\d+(?:,\d+)*(?:\.\d+)?|\d+(?:,\d+)*(?:\.\d+)?\s*(?:dollars|USD|€|£|euros|pounds)'
+            for sentence in sentences:
+                matches = re.findall(amount_pattern, sentence.text)
+                if matches:
+                    return {
+                        'value': matches[0],
+                        'context': sentence.text
+                    }
+        
+        # ID or reference number patterns
+        if any(word in instructions_lower for word in ['id', 'number', 'reference', 'code']):
+            id_pattern = r'\b(?:[A-Z0-9]{2,}-[A-Z0-9]{2,}(?:-[A-Z0-9]{2,})*|[A-Z]{2,}\d{4,}|\d{4,}[A-Z]{2,}|[A-Z]{2}\d{6,})\b'
+            for sentence in sentences:
+                matches = re.findall(id_pattern, sentence.text)
+                if matches:
+                    return {
+                        'value': matches[0],
+                        'context': sentence.text
+                    }
+        
+        # If no specific information was found, return the most relevant sentence
+        if sentences:
+            most_relevant = sentences[0]
+            return {
+                'value': most_relevant.text.strip(),
+                'context': most_relevant.text.strip()
+            }
+        
+        return None

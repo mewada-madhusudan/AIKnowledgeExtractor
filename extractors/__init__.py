@@ -1,1 +1,1 @@
-# This file makes extractors a package
+# extractors package initialization

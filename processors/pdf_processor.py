@@ -1,11 +1,10 @@
+import os
 import io
-import logging
 import PyPDF2
-from pdf2image import convert_from_path
+import pdf2image
 import pytesseract
 from PIL import Image
 
-logger = logging.getLogger(__name__)
 
 class PDFProcessor:
     """Processor for PDF files"""
@@ -24,28 +23,31 @@ class PDFProcessor:
         Returns:
             dict: A dictionary mapping page numbers to text content
         """
+        # Open the PDF file
+        pages = {}
+        
         try:
-            pages_content = {}
-            
-            # Try extracting text directly first
             with open(file_path, 'rb') as file:
+                # Create a PDF reader object
                 pdf_reader = PyPDF2.PdfReader(file)
                 
+                # Process each page
                 for page_num in range(len(pdf_reader.pages)):
+                    # Try to extract text directly first
                     page = pdf_reader.pages[page_num]
                     text = page.extract_text()
                     
-                    # If page has no text (might be an image-based PDF), use OCR
-                    if not text or len(text.strip()) < 50:  # Arbitrary threshold to detect low text content
-                        pages_content[page_num + 1] = self._extract_text_with_ocr(file_path, page_num)
-                    else:
-                        pages_content[page_num + 1] = text
-            
-            return pages_content
-            
+                    # If no text is extracted, try OCR
+                    if not text or len(text.strip()) < 50:  # Arbitrary threshold
+                        text = self._extract_text_with_ocr(file_path, page_num)
+                    
+                    # Store the extracted text
+                    pages[page_num + 1] = text  # 1-based page numbering
+        
         except Exception as e:
-            logger.error(f"Error extracting text from PDF: {str(e)}")
-            raise
+            raise Exception(f"Failed to process PDF: {str(e)}")
+        
+        return pages
     
     def _extract_text_with_ocr(self, pdf_path, page_num):
         """
@@ -60,15 +62,22 @@ class PDFProcessor:
         """
         try:
             # Convert PDF page to image
-            images = convert_from_path(pdf_path, first_page=page_num+1, last_page=page_num+1)
+            images = pdf2image.convert_from_path(
+                pdf_path, 
+                first_page=page_num+1, 
+                last_page=page_num+1,
+                dpi=300
+            )
             
             if not images:
                 return ""
             
-            # Use OCR to extract text from the image
-            text = pytesseract.image_to_string(images[0])
-            return text
+            # Apply OCR to the image
+            image = images[0]
+            text = pytesseract.image_to_string(image)
             
+            return text
+        
         except Exception as e:
-            logger.error(f"Error extracting text with OCR: {str(e)}")
-            return f"[OCR ERROR: {str(e)}]"
+            print(f"OCR failed on page {page_num+1}: {str(e)}")
+            return ""

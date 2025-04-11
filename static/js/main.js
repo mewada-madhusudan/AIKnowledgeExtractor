@@ -1,135 +1,134 @@
-// Document upload preview
-function previewDocument() {
-  const fileInput = document.getElementById('document-upload');
-  const previewContainer = document.getElementById('document-preview');
-  const fileNameDisplay = document.getElementById('file-name');
-  
-  if (fileInput && fileInput.files && fileInput.files[0]) {
-    const file = fileInput.files[0];
-    
-    // Update file name display
-    if (fileNameDisplay) {
-      fileNameDisplay.textContent = file.name;
-    }
-    
-    // Show preview container
-    if (previewContainer) {
-      previewContainer.classList.remove('d-none');
-    }
-    
-    // Enable upload button
-    const uploadButton = document.getElementById('upload-button');
-    if (uploadButton) {
-      uploadButton.disabled = false;
-    }
-  }
-}
+// Main JavaScript for AI Document Processor
 
-// Handle document selection for extraction
-function updateSelectedCount() {
-  const checkboxes = document.querySelectorAll('input[name="document_ids"]:checked');
-  const selectedCount = document.getElementById('selected-count');
-  
-  if (selectedCount) {
-    selectedCount.textContent = checkboxes.length;
-  }
-  
-  // Enable/disable extract button based on selection
-  const extractButton = document.getElementById('extract-button');
-  if (extractButton) {
-    extractButton.disabled = checkboxes.length === 0;
-  }
-}
-
-// Toggle document selection
+// Toggle select all documents in extraction page
 function toggleSelectAll() {
-  const selectAllCheckbox = document.getElementById('select-all');
-  const documentCheckboxes = document.querySelectorAll('input[name="document_ids"]');
-  
-  if (selectAllCheckbox) {
-    documentCheckboxes.forEach(checkbox => {
-      checkbox.checked = selectAllCheckbox.checked;
+    const checkboxes = document.querySelectorAll('.document-checkbox');
+    const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
+    
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = anyUnchecked;
     });
     
     updateSelectedCount();
-  }
 }
 
-// Initialize tooltips and popovers
-document.addEventListener('DOMContentLoaded', function() {
-  // Initialize Bootstrap tooltips
-  const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-  const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
-  
-  // Initialize Bootstrap popovers
-  const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]');
-  const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl));
-  
-  // Add event listeners to document checkboxes
-  const documentCheckboxes = document.querySelectorAll('input[name="document_ids"]');
-  documentCheckboxes.forEach(checkbox => {
-    checkbox.addEventListener('change', updateSelectedCount);
-  });
-  
-  // Add event listener to select all checkbox
-  const selectAllCheckbox = document.getElementById('select-all');
-  if (selectAllCheckbox) {
-    selectAllCheckbox.addEventListener('change', toggleSelectAll);
-  }
-  
-  // Add event listener to document upload
-  const fileInput = document.getElementById('document-upload');
-  if (fileInput) {
-    fileInput.addEventListener('change', previewDocument);
-  }
-});
+// Update selected documents count
+function updateSelectedCount() {
+    const count = document.querySelectorAll('.document-checkbox:checked').length;
+    const countElement = document.getElementById('selectedCount');
+    if (countElement) {
+        countElement.textContent = count + ' document' + (count !== 1 ? 's' : '') + ' selected';
+    }
+    
+    const errorElement = document.getElementById('documentSelectionError');
+    if (errorElement) {
+        errorElement.classList.add('d-none');
+    }
+}
 
-// Show/hide page content
+// Toggle page content visibility
 function togglePageContent(pageId) {
-  const contentElement = document.getElementById(`page-content-${pageId}`);
-  if (contentElement) {
-    contentElement.classList.toggle('d-none');
-  }
+    const content = document.getElementById(`page-content-${pageId}`);
+    const button = document.getElementById(`toggle-btn-${pageId}`);
+    
+    if (content.classList.contains('d-none')) {
+        content.classList.remove('d-none');
+        button.innerHTML = '<i class="fas fa-minus-circle"></i> Hide Content';
+    } else {
+        content.classList.add('d-none');
+        button.innerHTML = '<i class="fas fa-plus-circle"></i> Show Content';
+    }
 }
 
 // Export results to CSV
 function exportToCSV() {
-  // Get table data
-  const table = document.getElementById('results-table');
-  if (!table) return;
-  
-  const rows = table.querySelectorAll('tr');
-  const csvContent = [];
-  
-  // Add header row
-  const headerRow = [];
-  const headers = rows[0].querySelectorAll('th');
-  headers.forEach(header => {
-    headerRow.push(`"${header.textContent.trim()}"`);
-  });
-  csvContent.push(headerRow.join(','));
-  
-  // Add data rows
-  for (let i = 1; i < rows.length; i++) {
-    const dataRow = [];
-    const cells = rows[i].querySelectorAll('td');
-    cells.forEach(cell => {
-      dataRow.push(`"${cell.textContent.trim().replace(/"/g, '""')}"`);
-    });
-    csvContent.push(dataRow.join(','));
-  }
-  
-  // Create and download CSV file
-  const csvString = csvContent.join('\n');
-  const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  const url = URL.createObjectURL(blob);
-  
-  link.setAttribute('href', url);
-  link.setAttribute('download', 'extraction_results.csv');
-  link.style.visibility = 'hidden';
-  
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
+    const table = document.getElementById('resultsTable');
+    if (!table) return;
+    
+    // Create CSV content
+    let csv = [];
+    const rows = table.querySelectorAll('tr');
+    
+    for (let i = 0; i < rows.length; i++) {
+        const row = [], cols = rows[i].querySelectorAll('td, th');
+        
+        for (let j = 0; j < cols.length; j++) {
+            // Skip the context column (which is interactive)
+            if (j === 4 && i > 0) { 
+                const contextDiv = cols[j].querySelector('div.collapse');
+                const preEl = contextDiv ? contextDiv.querySelector('pre') : null;
+                const contextText = preEl ? preEl.textContent.trim() : '';
+                
+                // Escape quotes and handle CSV format
+                let cell = contextText.replace(/"/g, '""');
+                if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                    cell = `"${cell}"`;
+                }
+                row.push(cell);
+            } else if (j !== 4 || i === 0) {
+                // Get content from regular cells
+                let cell = cols[j].innerText.trim();
+                
+                // Escape quotes and handle CSV format
+                cell = cell.replace(/"/g, '""');
+                if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                    cell = `"${cell}"`;
+                }
+                row.push(cell);
+            }
+        }
+        csv.push(row.join(','));
+    }
+    
+    // Download CSV file
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'extraction_results.csv');
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+// Preview document before uploading
+function previewDocument() {
+    const fileInput = document.getElementById('document');
+    const previewContainer = document.getElementById('document-preview');
+    
+    if (fileInput.files && fileInput.files[0]) {
+        const file = fileInput.files[0];
+        const filename = file.name;
+        const filesize = (file.size / 1024).toFixed(2) + ' KB';
+        const filetype = file.type;
+        
+        let iconClass = 'far fa-file';
+        if (file.type.includes('pdf')) {
+            iconClass = 'far fa-file-pdf';
+        } else if (file.type.includes('word') || filename.endsWith('.docx')) {
+            iconClass = 'far fa-file-word';
+        } else if (file.type.includes('image')) {
+            iconClass = 'far fa-file-image';
+        }
+        
+        previewContainer.innerHTML = `
+            <div class="card bg-light mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="${iconClass} me-2"></i>
+                        ${filename}
+                    </h5>
+                    <p class="card-text">
+                        <small>Type: ${filetype}</small><br>
+                        <small>Size: ${filesize}</small>
+                    </p>
+                </div>
+            </div>
+        `;
+        previewContainer.classList.remove('d-none');
+    } else {
+        previewContainer.classList.add('d-none');
+    }
 }

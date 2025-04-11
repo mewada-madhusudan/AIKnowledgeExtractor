@@ -1,10 +1,7 @@
 import re
-import logging
 import pandas as pd
-from collections import defaultdict
 from extractors.nlp_extractor import NLPExtractor
 
-logger = logging.getLogger(__name__)
 
 class PatternExtractor:
     """Class for extracting data based on patterns and instructions"""
@@ -24,34 +21,38 @@ class PatternExtractor:
             list: List of extraction rules
         """
         try:
-            # Read Excel file
             df = pd.read_excel(excel_path)
             
             # Check required columns
-            required_cols = ['field_name', 'search_pattern']
-            missing_cols = [col for col in required_cols if col not in df.columns]
+            if 'field_name' not in df.columns:
+                raise ValueError("Excel file must have a 'field_name' column")
             
-            if missing_cols:
-                raise ValueError(f"Missing required columns in Excel file: {', '.join(missing_cols)}")
-            
-            # Convert to rules list
             rules = []
+            
             for _, row in df.iterrows():
                 rule = {
                     'field_name': row['field_name'],
-                    'search_pattern': row['search_pattern'],
+                    'search_pattern': row.get('search_pattern', ''),
+                    'extraction_type': row.get('extraction_type', 'exact'),
                     'context_before': row.get('context_before', ''),
                     'context_after': row.get('context_after', ''),
-                    'extraction_type': row.get('extraction_type', 'exact'),
                     'instructions': row.get('instructions', '')
                 }
+                
+                # Validate rule
+                if not rule['field_name']:
+                    continue
+                
+                # For NLP extraction, the search pattern might be empty
+                if rule['extraction_type'] != 'nlp' and not rule['search_pattern']:
+                    continue
+                
                 rules.append(rule)
             
             return rules
         
         except Exception as e:
-            logger.error(f"Error loading rules from Excel: {str(e)}")
-            raise
+            raise Exception(f"Failed to load rules from Excel: {str(e)}")
     
     def extract_from_document(self, document, rules):
         """
@@ -66,29 +67,41 @@ class PatternExtractor:
         """
         results = []
         
-        for rule in rules:
-            field_name = rule['field_name']
-            search_pattern = rule['search_pattern']
-            
-            # Search for pattern in each page
-            for page_num, content in document['pages'].items():
-                if not content:
-                    continue
+        for page_num, page_text in document['pages'].items():
+            for rule_index, rule in enumerate(rules):
+                extraction_type = rule.get('extraction_type', 'exact')
                 
-                # Find matches
-                matches = self._find_matches(content, search_pattern, rule)
-                
-                if matches:
-                    for match in matches:
-                        result = {
-                            'document_id': document['id'],
-                            'document_name': document['name'],
+                # Use NLP-based extraction if specified
+                if extraction_type == 'nlp':
+                    # Get instructions from the rule
+                    instructions = rule.get('instructions', '')
+                    if not instructions:
+                        continue
+                    
+                    nlp_result = self.nlp_extractor.extract_from_text(page_text, instructions)
+                    
+                    if nlp_result and nlp_result.get('value'):
+                        results.append({
+                            'rule_index': rule_index,
                             'page_number': page_num,
-                            'field_name': field_name,
-                            'value': match['value'],
-                            'context': match['context']
-                        }
-                        results.append(result)
+                            'value': nlp_result.get('value', ''),
+                            'context': nlp_result.get('context', '')
+                        })
+                else:
+                    # Use pattern-based extraction
+                    pattern = rule.get('search_pattern', '')
+                    if not pattern:
+                        continue
+                    
+                    matches = self._find_matches(page_text, pattern, rule)
+                    
+                    for match in matches:
+                        results.append({
+                            'rule_index': rule_index,
+                            'page_number': page_num,
+                            'value': match.get('value', ''),
+                            'context': match.get('context', '')
+                        })
         
         return results
     
@@ -104,78 +117,92 @@ class PatternExtractor:
         Returns:
             list: List of matches with value and context
         """
+        extraction_type = rule.get('extraction_type', 'exact')
+        context_before = rule.get('context_before', '')
+        context_after = rule.get('context_after', '')
+        
         matches = []
         
-        try:
-            # Determine extraction type
-            extraction_type = rule.get('extraction_type', 'exact').lower()
-            
-            if extraction_type == 'nlp':
-                # Use NLP-based extraction with natural language instructions
-                # If pattern is empty but instructions exist, use only instructions
-                instructions = rule.get('instructions', '')
-                if not instructions and pattern:
-                    # If no specific instructions, use the pattern as instructions
-                    instructions = f"Extract {pattern} from the text"
+        if extraction_type == 'exact':
+            # Find exact matches
+            idx = 0
+            while idx < len(text):
+                found_idx = text.find(pattern, idx)
+                if found_idx == -1:
+                    break
                 
-                # Use our NLP extractor with the instructions
-                nlp_results = self.nlp_extractor.extract_from_text(text, instructions)
+                # Extract context
+                context_start = max(0, found_idx - 100)
+                context_end = min(len(text), found_idx + len(pattern) + 100)
+                context = text[context_start:context_end]
                 
-                # Convert NLP results to the expected format
-                for result in nlp_results:
-                    matches.append({
-                        'value': result['value'],
-                        'context': result['context']
-                    })
-            
-            elif extraction_type == 'regex':
-                # Use regex pattern directly
-                regex = re.compile(pattern, re.IGNORECASE)
+                matches.append({
+                    'value': pattern,
+                    'context': context
+                })
+                
+                idx = found_idx + 1
+                
+        elif extraction_type == 'regex':
+            # Find regex matches
+            try:
+                regex = re.compile(pattern)
                 for match in regex.finditer(text):
                     value = match.group(0)
                     
-                    # Get context around match
-                    start_pos = max(0, match.start() - 100)
-                    end_pos = min(len(text), match.end() + 100)
-                    context = text[start_pos:end_pos]
+                    # Extract context
+                    context_start = max(0, match.start() - 100)
+                    context_end = min(len(text), match.end() + 100)
+                    context = text[context_start:context_end]
                     
                     matches.append({
                         'value': value,
                         'context': context
                     })
-            
-            elif extraction_type == 'after_pattern':
-                # Extract content after pattern
-                regex = re.compile(f"{re.escape(pattern)}(.*?)(?:\n|$)", re.IGNORECASE | re.DOTALL)
-                for match in regex.finditer(text):
-                    value = match.group(1).strip()
-                    
-                    # Get context around match
-                    start_pos = max(0, match.start() - 50)
-                    end_pos = min(len(text), match.end() + 50)
-                    context = text[start_pos:end_pos]
-                    
-                    matches.append({
-                        'value': value,
-                        'context': context
-                    })
-            
-            else:  # 'exact' or default
-                # Look for exact match
-                positions = [m.start() for m in re.finditer(re.escape(pattern), text, re.IGNORECASE)]
-                for pos in positions:
-                    # Get context around match
-                    start_pos = max(0, pos - 50)
-                    end_pos = min(len(text), pos + len(pattern) + 50)
-                    context = text[start_pos:end_pos]
-                    
-                    matches.append({
-                        'value': pattern,
-                        'context': context
-                    })
-        
-        except Exception as e:
-            logger.error(f"Error finding matches: {str(e)}")
-            # Return empty list on error
+            except:
+                pass
+                
+        elif extraction_type == 'after_pattern':
+            # Extract text after pattern
+            idx = 0
+            while idx < len(text):
+                found_idx = text.find(pattern, idx)
+                if found_idx == -1:
+                    break
+                
+                # Extract text after pattern
+                start_pos = found_idx + len(pattern)
+                end_pos = start_pos
+                
+                # If context_after is specified, use it as a delimiter
+                if context_after:
+                    end_match = text.find(context_after, start_pos)
+                    if end_match != -1:
+                        end_pos = end_match
+                    else:
+                        # If delimiter not found, use the next 50 characters or end of line
+                        end_pos = min(start_pos + 50, len(text))
+                        newline_pos = text.find('\n', start_pos)
+                        if newline_pos != -1 and newline_pos < end_pos:
+                            end_pos = newline_pos
+                else:
+                    # If no delimiter, use the next 50 characters or end of line
+                    end_pos = min(start_pos + 50, len(text))
+                    newline_pos = text.find('\n', start_pos)
+                    if newline_pos != -1 and newline_pos < end_pos:
+                        end_pos = newline_pos
+                
+                # Extract value and context
+                value = text[start_pos:end_pos].strip()
+                context_start = max(0, found_idx - 50)
+                context_end = min(len(text), end_pos + 50)
+                context = text[context_start:context_end]
+                
+                matches.append({
+                    'value': value,
+                    'context': context
+                })
+                
+                idx = found_idx + 1
         
         return matches

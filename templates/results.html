@@ -1,200 +1,129 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
+
+{% block title %} - Extraction Results{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row mb-4">
-        <div class="col">
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ url_for('list_documents') }}">Documents</a></li>
-                    <li class="breadcrumb-item"><a href="{{ url_for('extract_data') }}">Extract Data</a></li>
-                    <li class="breadcrumb-item active" aria-current="page">Results</li>
-                </ol>
-            </nav>
-            
-            <h2>
-                <i class="fas fa-table me-2"></i>
-                Extraction Results
-            </h2>
-            <p class="text-muted">
-                Found {{ results|length }} matches across {{ document_count }} document(s).
-            </p>
-            
-            <div class="mb-4">
-                <button class="btn btn-success" onclick="exportToCSV()">
-                    <i class="fas fa-file-csv me-2"></i>
-                    Export to CSV
-                </button>
-                <a href="{{ url_for('extract_data') }}" class="btn btn-outline-primary ms-2">
-                    <i class="fas fa-search me-2"></i>
-                    New Extraction
-                </a>
-            </div>
+<div class="card shadow">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-search me-2"></i>
+            Extraction Results
+        </h5>
+        <div>
+            <a href="{{ url_for('extract_data') }}" class="btn btn-outline-light btn-sm">
+                <i class="fas fa-arrow-left me-1"></i> Back to Extraction
+            </a>
+            <button class="btn btn-outline-light btn-sm ms-2" onclick="exportToCSV()">
+                <i class="fas fa-file-export me-1"></i> Export to CSV
+            </button>
         </div>
     </div>
-    
-    {% if results %}
-    <div class="row">
-        <div class="col">
-            <div class="table-responsive">
-                <table class="table table-hover" id="results-table">
-                    <thead>
-                        <tr>
-                            <th scope="col">Field</th>
-                            <th scope="col">Document</th>
-                            <th scope="col">Page</th>
-                            <th scope="col">Extracted Value</th>
-                            <th scope="col">Context</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for result in results %}
-                        <tr>
-                            <td>
-                                <span class="badge bg-primary">{{ result.rule.name }}</span>
-                            </td>
-                            <td>
-                                <a href="{{ url_for('view_document', doc_id=result.document.id) }}">
-                                    <div class="d-flex align-items-center">
-                                        <i class="fas fa-file-{% if result.document.file_type == 'pdf' %}pdf{% elif result.document.file_type == 'docx' %}word{% else %}image{% endif %} text-{% if result.document.file_type == 'pdf' %}danger{% elif result.document.file_type == 'docx' %}primary{% else %}success{% endif %} me-2"></i>
-                                        {{ result.document.filename }}
-                                    </div>
-                                </a>
-                            </td>
-                            <td>{{ result.page_number }}</td>
-                            <td>
-                                <div class="text-break" style="max-width: 300px;">{{ result.value }}</div>
-                            </td>
-                            <td>
-                                <div class="text-break" style="max-width: 400px;">
-                                    {% if result.context %}
-                                    <pre class="small text-muted bg-dark p-2 rounded">{{ result.context }}</pre>
-                                    {% else %}
-                                    <span class="text-muted">No context available</span>
-                                    {% endif %}
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-12">
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Data has been extracted from <strong>{{ document_count }}</strong> documents using <strong>{{ rules|length }}</strong> extraction rules.
+                </div>
+            </div>
+        </div>
+        
+        {% if results %}
+        <div class="table-responsive">
+            <table class="table table-striped table-hover" id="resultsTable">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Document</th>
+                        <th>Page</th>
+                        <th>Field</th>
+                        <th>Value</th>
+                        <th>Context</th>
+                        <th>Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for result in results %}
+                    <tr>
+                        <td>{{ result.document.filename }}</td>
+                        <td>{{ result.page_number }}</td>
+                        <td>{{ result.rule.name }}</td>
+                        <td>{{ result.value }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-info" type="button" data-bs-toggle="collapse" data-bs-target="#context{{ result.id }}" aria-expanded="false">
+                                <i class="fas fa-eye"></i> Show Context
+                            </button>
+                            <div class="collapse mt-2" id="context{{ result.id }}">
+                                <div class="card card-body">
+                                    <pre class="mb-0 small">{{ result.context }}</pre>
                                 </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-primary">{{ result.rule.extraction_type }}</span></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
-    </div>
-    {% else %}
-    <div class="row">
-        <div class="col">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle me-2"></i>
-                No matching data found for your extraction rules.
-            </div>
-            <div class="text-center mt-4">
-                <a href="{{ url_for('extract_data') }}" class="btn btn-primary">
-                    <i class="fas fa-search me-2"></i>
-                    Try Different Rules
-                </a>
-            </div>
+        {% else %}
+        <div class="alert alert-warning" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            No extraction results found. Try different documents or extraction rules.
         </div>
+        {% endif %}
     </div>
-    {% endif %}
-    
-    {% if rules %}
-    <div class="row mt-5">
-        <div class="col">
-            <h3>Extraction Rules Used</h3>
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Field Name</th>
-                            <th>Search Pattern</th>
-                            <th>Extraction Type</th>
-                            <th>Instructions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for rule in rules %}
-                        <tr>
-                            <td>{{ rule.name }}</td>
-                            <td>
-                                {% if rule.pattern %}
-                                <code>{{ rule.pattern }}</code>
-                                {% else %}
-                                <span class="text-muted">N/A</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <span class="badge {% if rule.extraction_type == 'exact' %}bg-secondary{% elif rule.extraction_type == 'regex' %}bg-warning{% elif rule.extraction_type == 'after_pattern' %}bg-info{% elif rule.extraction_type == 'nlp' %}bg-success{% endif %}">
-                                    {{ rule.extraction_type }}
-                                </span>
-                            </td>
-                            <td>
-                                {% if rule.instructions %}
-                                <div class="text-break" style="max-width: 300px;">
-                                    {{ rule.instructions }}
-                                </div>
-                                {% else %}
-                                <span class="text-muted">No instructions</span>
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 </div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     function exportToCSV() {
-        const table = document.getElementById('results-table');
+        // Get table data
+        const table = document.getElementById('resultsTable');
+        if (!table) return;
+        
+        // Create CSV content
         let csv = [];
+        const rows = table.querySelectorAll('tr');
         
-        // Get headers
-        let headers = [];
-        const headerCells = table.querySelectorAll('thead th');
-        headerCells.forEach(cell => {
-            headers.push(cell.textContent.trim());
-        });
-        csv.push(headers.join(','));
+        for (let i = 0; i < rows.length; i++) {
+            const row = [], cols = rows[i].querySelectorAll('td, th');
+            
+            for (let j = 0; j < cols.length; j++) {
+                // Skip the context column (which is interactive)
+                if (j === 4 && i > 0) { 
+                    const contextDiv = cols[j].querySelector('div.collapse');
+                    const preEl = contextDiv ? contextDiv.querySelector('pre') : null;
+                    const contextText = preEl ? preEl.textContent.trim() : '';
+                    
+                    // Escape quotes and handle CSV format
+                    let cell = contextText.replace(/"/g, '""');
+                    if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                        cell = `"${cell}"`;
+                    }
+                    row.push(cell);
+                } else if (j !== 4 || i === 0) {
+                    // Get content from regular cells
+                    let cell = cols[j].innerText.trim();
+                    
+                    // Escape quotes and handle CSV format
+                    cell = cell.replace(/"/g, '""');
+                    if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                        cell = `"${cell}"`;
+                    }
+                    row.push(cell);
+                }
+            }
+            csv.push(row.join(','));
+        }
         
-        // Get rows
-        const rows = table.querySelectorAll('tbody tr');
-        rows.forEach(row => {
-            let rowData = [];
-            const cells = row.querySelectorAll('td');
-            
-            // Field name (first column)
-            const fieldBadge = cells[0].querySelector('.badge');
-            rowData.push('"' + fieldBadge.textContent.trim() + '"');
-            
-            // Document name (second column)
-            const documentLink = cells[1].querySelector('a');
-            rowData.push('"' + documentLink.textContent.trim() + '"');
-            
-            // Page number (third column)
-            rowData.push('"' + cells[2].textContent.trim() + '"');
-            
-            // Extracted value (fourth column)
-            rowData.push('"' + cells[3].textContent.trim().replace(/"/g, '""') + '"');
-            
-            // Context (fifth column) - clean up pre formatting
-            const contextText = cells[4].textContent.trim().replace(/\s+/g, ' ').replace(/"/g, '""');
-            rowData.push('"' + contextText + '"');
-            
-            csv.push(rowData.join(','));
-        });
-        
-        // Download CSV
-        const csvContent = 'data:text/csv;charset=utf-8,' + csv.join('\n');
-        const encodedUri = encodeURI(csvContent);
+        // Download CSV file
+        const csvContent = csv.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.setAttribute('href', encodedUri);
+        link.setAttribute('href', url);
         link.setAttribute('download', 'extraction_results.csv');
+        link.style.visibility = 'hidden';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

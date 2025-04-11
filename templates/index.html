@@ -1,144 +1,81 @@
-{% extends 'layout.html' %}
+{% extends "layout.html" %}
+
+{% block title %} - Home{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row align-items-center mb-5">
-        <div class="col-lg-6">
-            <h1 class="display-4 mb-4">Extract Data from Documents with AI</h1>
-            <p class="lead mb-4">
-                Transform your unstructured documents into structured data using advanced natural language processing.
-                Upload PDFs, Word documents, or images and extract exactly what you need.
-            </p>
-            <div class="d-flex gap-3">
-                <a href="{{ url_for('list_documents') }}" class="btn btn-primary btn-lg">
-                    <i class="fas fa-upload me-2"></i>
-                    Upload Documents
-                </a>
-                <a href="{{ url_for('extract_data') }}" class="btn btn-outline-light btn-lg">
-                    <i class="fas fa-search me-2"></i>
-                    Extract Data
-                </a>
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-lg">
+            <div class="card-header bg-primary text-white">
+                <h1 class="card-title text-center">
+                    <i class="fas fa-file-alt me-2"></i>
+                    AI Document Processor
+                </h1>
             </div>
-        </div>
-        <div class="col-lg-6 d-none d-lg-block text-center">
-            <img src="https://cdn-icons-png.flaticon.com/512/8364/8364391.png" 
-                 alt="Document Extraction" class="img-fluid mt-4" style="max-width: 350px;">
-        </div>
-    </div>
-    
-    <div class="row mb-5">
-        <div class="col-12">
-            <div class="card bg-dark">
-                <div class="card-body p-4">
-                    <h2 class="card-title mb-4">How It Works</h2>
-                    <div class="row g-4">
-                        <div class="col-md-4">
-                            <div class="text-center mb-3">
-                                <div class="bg-info bg-opacity-10 rounded-circle d-inline-block p-3 mb-3">
-                                    <i class="fas fa-file-upload fa-2x text-info"></i>
-                                </div>
-                                <h4>1. Upload Documents</h4>
-                                <p>Upload PDF, DOCX or image files. The system will process and extract text content.</p>
+            <div class="card-body">
+                <p class="lead text-center">Extract data from your documents using AI and natural language processing.</p>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body text-center">
+                                <i class="fas fa-upload fa-3x mb-3 text-primary"></i>
+                                <h3>Upload Documents</h3>
+                                <p>Upload PDF, DOCX, or image files to extract text.</p>
+                                <a href="{{ url_for('list_documents') }}" class="btn btn-primary">
+                                    <i class="fas fa-upload me-2"></i> Get Started
+                                </a>
                             </div>
                         </div>
-                        <div class="col-md-4">
-                            <div class="text-center mb-3">
-                                <div class="bg-info bg-opacity-10 rounded-circle d-inline-block p-3 mb-3">
-                                    <i class="fas fa-clipboard-list fa-2x text-info"></i>
-                                </div>
-                                <h4>2. Define Extraction Rules</h4>
-                                <p>Use natural language instructions or specific patterns to define what to extract.</p>
-                            </div>
-                        </div>
-                        <div class="col-md-4">
-                            <div class="text-center mb-3">
-                                <div class="bg-info bg-opacity-10 rounded-circle d-inline-block p-3 mb-3">
-                                    <i class="fas fa-table fa-2x text-info"></i>
-                                </div>
-                                <h4>3. Get Structured Data</h4>
-                                <p>View and export extracted data in structured format for analysis or integration.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card mb-3">
+                            <div class="card-body text-center">
+                                <i class="fas fa-search fa-3x mb-3 text-primary"></i>
+                                <h3>Extract Data</h3>
+                                <p>Extract specific data using patterns or natural language instructions.</p>
+                                <a href="{{ url_for('extract_data') }}" class="btn btn-primary">
+                                    <i class="fas fa-search me-2"></i> Extract Data
+                                </a>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row mb-5">
-        <div class="col-12">
-            <h2 class="mb-4">Extraction Features</h2>
-            <div class="row g-4">
-                <div class="col-md-6">
-                    <div class="card h-100 bg-dark-subtle">
-                        <div class="card-body">
-                            <h3 class="card-title">
-                                <i class="fas fa-brain text-primary me-2"></i>
-                                Natural Language Instructions
-                            </h3>
-                            <p class="card-text">
-                                Use plain English instructions to extract information without needing to specify patterns.
-                                Simply describe what you're looking for, such as "Find the invoice total" or 
-                                "Extract the customer's full address".
-                            </p>
-                            <ul class="list-group list-group-flush bg-transparent">
-                                <li class="list-group-item bg-transparent">Extracts information based on meaning, not just patterns</li>
-                                <li class="list-group-item bg-transparent">Adapts to different document formats and layouts</li>
-                                <li class="list-group-item bg-transparent">Understands context and semantics of the document</li>
-                            </ul>
+                
+                <hr>
+                
+                <div class="mt-4">
+                    <h3 class="text-center mb-4">How It Works</h3>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <div class="circle bg-primary mb-3">
+                                    <span>1</span>
+                                </div>
+                                <h4>Upload Documents</h4>
+                                <p>Upload your PDF, DOCX, or image files to the system.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <div class="circle bg-primary mb-3">
+                                    <span>2</span>
+                                </div>
+                                <h4>Define Extraction Rules</h4>
+                                <p>Create rules with patterns or natural language instructions.</p>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-center mb-3">
+                                <div class="circle bg-primary mb-3">
+                                    <span>3</span>
+                                </div>
+                                <h4>Extract & Export</h4>
+                                <p>View extracted data and export to CSV or other formats.</p>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6">
-                    <div class="card h-100 bg-dark-subtle">
-                        <div class="card-body">
-                            <h3 class="card-title">
-                                <i class="fas fa-search text-primary me-2"></i>
-                                Pattern-Based Extraction
-                            </h3>
-                            <p class="card-text">
-                                For more precise extraction needs, define specific patterns to match in your documents.
-                                Use exact text matching, regular expressions, or extract text that follows specific patterns.
-                            </p>
-                            <ul class="list-group list-group-flush bg-transparent">
-                                <li class="list-group-item bg-transparent">Exact pattern matching with context awareness</li>
-                                <li class="list-group-item bg-transparent">Regular expression support for complex patterns</li>
-                                <li class="list-group-item bg-transparent">Extract text before, after, or between patterns</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <div class="row">
-        <div class="col-12 text-center">
-            <h2 class="mb-4">Supported File Types</h2>
-            <div class="row justify-content-center">
-                <div class="col-md-3 col-sm-6 mb-4">
-                    <div class="d-flex flex-column align-items-center">
-                        <i class="fas fa-file-pdf fa-3x text-danger mb-3"></i>
-                        <h5>PDF Documents</h5>
-                    </div>
-                </div>
-                <div class="col-md-3 col-sm-6 mb-4">
-                    <div class="d-flex flex-column align-items-center">
-                        <i class="fas fa-file-word fa-3x text-primary mb-3"></i>
-                        <h5>Word Documents</h5>
-                    </div>
-                </div>
-                <div class="col-md-3 col-sm-6 mb-4">
-                    <div class="d-flex flex-column align-items-center">
-                        <i class="fas fa-file-image fa-3x text-success mb-3"></i>
-                        <h5>Images (JPG, PNG)</h5>
-                    </div>
-                </div>
-            </div>
-            <div class="mt-4">
-                <a href="{{ url_for('list_documents') }}" class="btn btn-primary btn-lg px-5">
-                    Get Started Now
-                </a>
             </div>
         </div>
     </div>

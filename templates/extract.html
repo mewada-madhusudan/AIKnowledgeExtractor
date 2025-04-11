@@ -4,63 +4,80 @@
 <div class="container">
     <div class="row mb-4">
         <div class="col">
-            <h2>Extract Data</h2>
-            <p class="text-muted">Extract specific data from your documents using search patterns</p>
+            <h2>
+                <i class="fas fa-search me-2"></i>
+                Extract Data
+            </h2>
+            <p class="text-muted">Extract structured data from your documents using patterns or natural language instructions.</p>
         </div>
     </div>
     
     {% if documents %}
-    <!-- Extraction Form -->
-    <form action="{{ url_for('extract_data') }}" method="post" enctype="multipart/form-data">
-        <div class="row">
-            <!-- Document Selection -->
-            <div class="col-md-6 mb-4">
-                <div class="card bg-dark h-100">
-                    <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-file-alt me-2"></i>
-                            Step 1: Select Documents
-                        </h5>
+    <form action="{{ url_for('show_results') }}" method="post" enctype="multipart/form-data">
+        <!-- Document Selection -->
+        <div class="row mb-5">
+            <div class="col">
+                <div class="card bg-dark">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Select Documents</h5>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="select-all" onclick="toggleSelectAll()">
+                            <label class="form-check-label" for="select-all">
+                                Select All
+                            </label>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">
-                            <div class="form-check mb-2">
-                                <input class="form-check-input" type="checkbox" id="select-all">
-                                <label class="form-check-label" for="select-all">
-                                    <strong>Select All Documents</strong>
-                                </label>
-                            </div>
-                            <hr>
-                            <div class="document-list" style="max-height: 300px; overflow-y: auto;">
-                                {% for document in documents %}
-                                <div class="form-check mb-2">
-                                    <input class="form-check-input" type="checkbox" name="document_ids" 
-                                           id="doc-{{ document.id }}" value="{{ document.id }}">
-                                    <label class="form-check-label" for="doc-{{ document.id }}">
-                                        <i class="fas fa-file-{% if document.file_type == 'pdf' %}pdf{% elif document.file_type == 'docx' %}word{% else %}image{% endif %} me-2"></i>
-                                        {{ document.filename }} 
-                                        <span class="badge bg-secondary ms-1">{{ document.page_count }} pages</span>
-                                    </label>
-                                </div>
-                                {% endfor %}
-                            </div>
+                            <span>Selected: <span id="selected-count">0</span> of {{ documents|length }}</span>
                         </div>
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <span id="selected-count">0</span> document(s) selected
+                        
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" width="50">Select</th>
+                                        <th scope="col">Document</th>
+                                        <th scope="col">Type</th>
+                                        <th scope="col">Pages</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for document in documents %}
+                                    <tr>
+                                        <td>
+                                            <div class="form-check">
+                                                <input class="form-check-input document-checkbox" type="checkbox" 
+                                                       name="document_ids" value="{{ document.id }}" 
+                                                       id="doc-{{ document.id }}" onchange="updateSelectedCount()">
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <label for="doc-{{ document.id }}" class="text-decoration-none" style="cursor: pointer;">
+                                                <div class="d-flex align-items-center">
+                                                    <i class="fas fa-file-{% if document.file_type == 'pdf' %}pdf{% elif document.file_type == 'docx' %}word{% else %}image{% endif %} text-{% if document.file_type == 'pdf' %}danger{% elif document.file_type == 'docx' %}primary{% else %}success{% endif %} me-2"></i>
+                                                    {{ document.filename }}
+                                                </div>
+                                            </label>
+                                        </td>
+                                        <td><span class="badge bg-secondary">{{ document.file_type.upper() }}</span></td>
+                                        <td>{{ document.page_count }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
-            
-            <!-- Extraction Rules -->
-            <div class="col-md-6 mb-4">
-                <div class="card bg-dark h-100">
+        </div>
+        
+        <!-- Extraction Rules -->
+        <div class="row mb-5">
+            <div class="col">
+                <div class="card bg-dark">
                     <div class="card-header">
-                        <h5 class="mb-0">
-                            <i class="fas fa-table me-2"></i>
-                            Step 2: Upload Extraction Rules
-                        </h5>
+                        <h5 class="mb-0">Extraction Rules</h5>
                     </div>
                     <div class="card-body">
                         <div class="mb-3">

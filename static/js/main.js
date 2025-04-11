@@ -1,142 +1,134 @@
-// Main JS for AI Document Processor
+// Main JavaScript for AI Document Processor
 
-// Document ready function
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
-    tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl)
-    });
-    
-    // Initialize document selection counter if on extract page
-    if (document.getElementById('selected-count')) {
-        updateSelectedCount();
-    }
-});
-
-// Toggle selection of all documents
+// Toggle select all documents in extraction page
 function toggleSelectAll() {
-    const selectAllCheckbox = document.getElementById('select-all');
-    const documentCheckboxes = document.querySelectorAll('.document-checkbox');
+    const checkboxes = document.querySelectorAll('.document-checkbox');
+    const anyUnchecked = Array.from(checkboxes).some(cb => !cb.checked);
     
-    documentCheckboxes.forEach(checkbox => {
-        checkbox.checked = selectAllCheckbox.checked;
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = anyUnchecked;
     });
     
     updateSelectedCount();
 }
 
-// Update the selected documents count
+// Update selected documents count
 function updateSelectedCount() {
-    const selectedCheckboxes = document.querySelectorAll('.document-checkbox:checked');
-    const selectedCount = document.getElementById('selected-count');
-    const extractButton = document.getElementById('extract-button');
-    
-    if (selectedCount) {
-        selectedCount.textContent = selectedCheckboxes.length;
+    const count = document.querySelectorAll('.document-checkbox:checked').length;
+    const countElement = document.getElementById('selectedCount');
+    if (countElement) {
+        countElement.textContent = count + ' document' + (count !== 1 ? 's' : '') + ' selected';
     }
     
-    if (extractButton) {
-        if (selectedCheckboxes.length > 0) {
-            extractButton.disabled = false;
-        } else {
-            extractButton.disabled = true;
-        }
+    const errorElement = document.getElementById('documentSelectionError');
+    if (errorElement) {
+        errorElement.classList.add('d-none');
     }
 }
 
 // Toggle page content visibility
 function togglePageContent(pageId) {
-    // This is used for lazy loading or other functionality
-    console.log('Toggle page: ' + pageId);
+    const content = document.getElementById(`page-content-${pageId}`);
+    const button = document.getElementById(`toggle-btn-${pageId}`);
+    
+    if (content.classList.contains('d-none')) {
+        content.classList.remove('d-none');
+        button.innerHTML = '<i class="fas fa-minus-circle"></i> Hide Content';
+    } else {
+        content.classList.add('d-none');
+        button.innerHTML = '<i class="fas fa-plus-circle"></i> Show Content';
+    }
 }
 
 // Export results to CSV
 function exportToCSV() {
-    const table = document.getElementById('results-table');
+    const table = document.getElementById('resultsTable');
     if (!table) return;
     
+    // Create CSV content
     let csv = [];
+    const rows = table.querySelectorAll('tr');
     
-    // Get headers
-    let headers = [];
-    const headerCells = table.querySelectorAll('thead th');
-    headerCells.forEach(cell => {
-        headers.push(cell.textContent.trim());
-    });
-    csv.push(headers.join(','));
-    
-    // Get rows
-    const rows = table.querySelectorAll('tbody tr');
-    rows.forEach(row => {
-        let rowData = [];
-        const cells = row.querySelectorAll('td');
+    for (let i = 0; i < rows.length; i++) {
+        const row = [], cols = rows[i].querySelectorAll('td, th');
         
-        cells.forEach((cell, index) => {
-            // Special handling for first column (field name in badge)
-            if (index === 0) {
-                const badge = cell.querySelector('.badge');
-                if (badge) {
-                    rowData.push('"' + badge.textContent.trim() + '"');
-                } else {
-                    rowData.push('""');
+        for (let j = 0; j < cols.length; j++) {
+            // Skip the context column (which is interactive)
+            if (j === 4 && i > 0) { 
+                const contextDiv = cols[j].querySelector('div.collapse');
+                const preEl = contextDiv ? contextDiv.querySelector('pre') : null;
+                const contextText = preEl ? preEl.textContent.trim() : '';
+                
+                // Escape quotes and handle CSV format
+                let cell = contextText.replace(/"/g, '""');
+                if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                    cell = `"${cell}"`;
                 }
-            } 
-            // Special handling for links in cells
-            else if (cell.querySelector('a')) {
-                rowData.push('"' + cell.textContent.trim().replace(/"/g, '""') + '"');
-            } 
-            // Regular cell content
-            else {
-                rowData.push('"' + cell.textContent.trim().replace(/"/g, '""') + '"');
+                row.push(cell);
+            } else if (j !== 4 || i === 0) {
+                // Get content from regular cells
+                let cell = cols[j].innerText.trim();
+                
+                // Escape quotes and handle CSV format
+                cell = cell.replace(/"/g, '""');
+                if (cell.includes(',') || cell.includes('"') || cell.includes('\n')) {
+                    cell = `"${cell}"`;
+                }
+                row.push(cell);
             }
-        });
-        
-        csv.push(rowData.join(','));
-    });
+        }
+        csv.push(row.join(','));
+    }
     
-    // Download CSV
-    const csvContent = 'data:text/csv;charset=utf-8,' + csv.join('\n');
-    const encodedUri = encodeURI(csvContent);
+    // Download CSV file
+    const csvContent = csv.join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
+    link.setAttribute('href', url);
     link.setAttribute('download', 'extraction_results.csv');
+    link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
 }
 
-// Document file preview
+// Preview document before uploading
 function previewDocument() {
     const fileInput = document.getElementById('document');
-    const previewContainer = document.getElementById('preview-container');
-    const previewIcon = document.getElementById('preview-icon');
-    const previewName = document.getElementById('preview-name');
-    const previewSize = document.getElementById('preview-size');
+    const previewContainer = document.getElementById('document-preview');
     
-    if (fileInput && fileInput.files && fileInput.files[0]) {
+    if (fileInput.files && fileInput.files[0]) {
         const file = fileInput.files[0];
-        previewContainer.classList.remove('d-none');
-        previewName.textContent = file.name;
+        const filename = file.name;
+        const filesize = (file.size / 1024).toFixed(2) + ' KB';
+        const filetype = file.type;
         
-        // Format file size
-        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-        previewSize.textContent = `${fileSizeMB} MB`;
-        
-        // Set appropriate icon
-        const extension = file.name.split('.').pop().toLowerCase();
-        previewIcon.className = 'fas fa-2x me-3 ';
-        
-        if (extension === 'pdf') {
-            previewIcon.className += 'fa-file-pdf text-danger';
-        } else if (extension === 'docx' || extension === 'doc') {
-            previewIcon.className += 'fa-file-word text-primary';
-        } else if (['jpg', 'jpeg', 'png', 'gif'].includes(extension)) {
-            previewIcon.className += 'fa-file-image text-success';
-        } else {
-            previewIcon.className += 'fa-file text-muted';
+        let iconClass = 'far fa-file';
+        if (file.type.includes('pdf')) {
+            iconClass = 'far fa-file-pdf';
+        } else if (file.type.includes('word') || filename.endsWith('.docx')) {
+            iconClass = 'far fa-file-word';
+        } else if (file.type.includes('image')) {
+            iconClass = 'far fa-file-image';
         }
-    } else if (previewContainer) {
+        
+        previewContainer.innerHTML = `
+            <div class="card bg-light mb-3">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="${iconClass} me-2"></i>
+                        ${filename}
+                    </h5>
+                    <p class="card-text">
+                        <small>Type: ${filetype}</small><br>
+                        <small>Size: ${filesize}</small>
+                    </p>
+                </div>
+            </div>
+        `;
+        previewContainer.classList.remove('d-none');
+    } else {
         previewContainer.classList.add('d-none');
     }
 }

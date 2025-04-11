@@ -1,65 +1,74 @@
 /* Custom CSS for AI Document Processor */
 
-/* Page content pre formatting */
-.page-content-pre {
+/* Circle style for steps */
+.circle {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+.circle span {
+    color: white;
+    font-size: 1.25rem;
+    font-weight: bold;
+}
+
+/* Styled pre for document content */
+pre {
     white-space: pre-wrap;
-    word-break: break-word;
-    max-height: 400px;
+    word-wrap: break-word;
+    max-height: 300px;
     overflow-y: auto;
-    background-color: rgba(33, 37, 41, 0.8);
-    border-radius: 0.25rem;
-    padding: 1rem;
-    font-size: 0.9rem;
 }
 
-/* Improve table readability */
-.table td {
-    vertical-align: middle;
+/* Table styles */
+.table-responsive {
+    border-radius: 5px;
+    overflow: hidden;
 }
 
-/* Custom styles for extraction badges */
-.badge.bg-success {
-    background-color: #20c997 !important;
+/* Card hover effect */
+.card {
+    transition: transform 0.3s, box-shadow 0.3s;
 }
 
-/* Custom fade effect for alerts */
-.alert-dismissible {
-    animation: fadeIn 0.5s;
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+/* Footer styling */
+.footer {
+    position: relative;
+    margin-top: 50px;
+    border-top: 1px solid var(--bs-border-color);
 }
 
-/* Custom file preview container */
-#preview-container .border {
-    transition: all 0.3s ease;
+/* Custom button hover effect */
+.btn {
+    transition: all 0.3s;
 }
 
-#preview-container .border:hover {
+.btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.15);
 }
 
-/* Custom styling for NLP instruction examples */
-.instruction-example {
-    font-style: italic;
-    color: #20c997;
-    margin-bottom: 0.25rem;
-}
-
-/* Custom styles for extraction type badges */
-.badge.bg-warning {
-    color: #212529;
-}
-
-/* Improved navbar styling */
-.navbar-brand {
-    font-weight: 600;
-    letter-spacing: 0.5px;
-}
-
-.nav-link.active {
-    font-weight: 600;
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 20px;
+    }
+    
+    .circle {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .circle span {
+        font-size: 1rem;
+    }
 }

@@ -1,26 +1,23 @@
 import os
 import tempfile
-from datetime import datetime
 from werkzeug.utils import secure_filename
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify, send_file
+from flask import Flask, request, render_template, redirect, url_for, flash
 from werkzeug.middleware.proxy_fix import ProxyFix
 
 from database import db
 from models import Document, Page, ExtractionRule, ExtractionResult
-from extractors.pattern_extractor import PatternExtractor
-from extractors.nlp_extractor import NLPExtractor
 from processors.document_processor import DocumentProcessor
 from processors.pdf_processor import PDFProcessor
 from processors.docx_processor import DocxProcessor
 from processors.image_processor import ImageProcessor
+from extractors.pattern_extractor import PatternExtractor
 
-# Setup Flask application
+# Initialize Flask app
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get("SESSION_SECRET", "development-secret-key")
 app.wsgi_app = ProxyFix(app.wsgi_app, x_proto=1, x_host=1)
 
 # Configure database
-import os
 db_path = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'instance', 'docprocessor.db')
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{db_path}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -50,9 +47,6 @@ pattern_extractor = PatternExtractor()
 def allowed_file(filename):
     """Check if the file has an allowed extension"""
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-
-
-# We already imported models at the top of the file
 
 
 # Create database tables

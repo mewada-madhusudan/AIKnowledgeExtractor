@@ -4,54 +4,74 @@
 <div class="container">
     <div class="row mb-4">
         <div class="col">
-            <h2>Extraction Results</h2>
-            <p class="text-muted">Data extracted from your documents based on the provided patterns</p>
-        </div>
-        <div class="col-auto">
-            {% if results %}
-            <button class="btn btn-success" onclick="exportToCSV()">
-                <i class="fas fa-file-csv me-2"></i>
-                Export to CSV
-            </button>
-            {% endif %}
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('list_documents') }}">Documents</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('extract_data') }}">Extract Data</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Results</li>
+                </ol>
+            </nav>
+            
+            <h2>
+                <i class="fas fa-table me-2"></i>
+                Extraction Results
+            </h2>
+            <p class="text-muted">
+                Found {{ results|length }} matches across {{ document_count }} document(s).
+            </p>
+            
+            <div class="mb-4">
+                <button class="btn btn-success" onclick="exportToCSV()">
+                    <i class="fas fa-file-csv me-2"></i>
+                    Export to CSV
+                </button>
+                <a href="{{ url_for('extract_data') }}" class="btn btn-outline-primary ms-2">
+                    <i class="fas fa-search me-2"></i>
+                    New Extraction
+                </a>
+            </div>
         </div>
     </div>
     
     {% if results %}
-    <div class="card bg-dark mb-5">
-        <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-                <h5 class="mb-0">
-                    <i class="fas fa-table me-2"></i>
-                    Extracted Data
-                </h5>
-                <span class="badge bg-primary">{{ results|length }} result(s)</span>
-            </div>
-        </div>
-        <div class="card-body">
+    <div class="row">
+        <div class="col">
             <div class="table-responsive">
-                <table class="table table-hover results-table" id="results-table">
+                <table class="table table-hover" id="results-table">
                     <thead>
                         <tr>
+                            <th scope="col">Field</th>
                             <th scope="col">Document</th>
                             <th scope="col">Page</th>
-                            <th scope="col">Field</th>
-                            <th scope="col">Value</th>
+                            <th scope="col">Extracted Value</th>
                             <th scope="col">Context</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for result in results %}
                         <tr>
-                            <td>{{ result.document_name }}</td>
-                            <td>{{ result.page_number }}</td>
-                            <td>{{ result.field_name }}</td>
                             <td>
-                                <span class="search-highlight">{{ result.value }}</span>
+                                <span class="badge bg-primary">{{ result.rule.name }}</span>
                             </td>
                             <td>
-                                <div class="context-display">
-                                    {{ result.context }}
+                                <a href="{{ url_for('view_document', doc_id=result.document.id) }}">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-file-{% if result.document.file_type == 'pdf' %}pdf{% elif result.document.file_type == 'docx' %}word{% else %}image{% endif %} text-{% if result.document.file_type == 'pdf' %}danger{% elif result.document.file_type == 'docx' %}primary{% else %}success{% endif %} me-2"></i>
+                                        {{ result.document.filename }}
+                                    </div>
+                                </a>
+                            </td>
+                            <td>{{ result.page_number }}</td>
+                            <td>
+                                <div class="text-break" style="max-width: 300px;">{{ result.value }}</div>
+                            </td>
+                            <td>
+                                <div class="text-break" style="max-width: 400px;">
+                                    {% if result.context %}
+                                    <pre class="small text-muted bg-dark p-2 rounded">{{ result.context }}</pre>
+                                    {% else %}
+                                    <span class="text-muted">No context available</span>
+                                    {% endif %}
                                 </div>
                             </td>
                         </tr>
@@ -61,27 +81,123 @@
             </div>
         </div>
     </div>
-    
+    {% else %}
     <div class="row">
-        <div class="col text-center">
-            <a href="{{ url_for('extract_data') }}" class="btn btn-primary">
-                <i class="fas fa-search me-2"></i>
-                Extract More Data
-            </a>
+        <div class="col">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle me-2"></i>
+                No matching data found for your extraction rules.
+            </div>
+            <div class="text-center mt-4">
+                <a href="{{ url_for('extract_data') }}" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>
+                    Try Different Rules
+                </a>
+            </div>
         </div>
     </div>
+    {% endif %}
     
-    {% else %}
-    <div class="alert alert-info">
-        <i class="fas fa-info-circle me-2"></i>
-        No results found. Try adjusting your search patterns or selecting different documents.
-    </div>
-    <div class="text-center mt-4">
-        <a href="{{ url_for('extract_data') }}" class="btn btn-primary">
-            <i class="fas fa-arrow-left me-2"></i>
-            Back to Extraction
-        </a>
+    {% if rules %}
+    <div class="row mt-5">
+        <div class="col">
+            <h3>Extraction Rules Used</h3>
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Field Name</th>
+                            <th>Search Pattern</th>
+                            <th>Extraction Type</th>
+                            <th>Instructions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rule in rules %}
+                        <tr>
+                            <td>{{ rule.name }}</td>
+                            <td>
+                                {% if rule.pattern %}
+                                <code>{{ rule.pattern }}</code>
+                                {% else %}
+                                <span class="text-muted">N/A</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="badge {% if rule.extraction_type == 'exact' %}bg-secondary{% elif rule.extraction_type == 'regex' %}bg-warning{% elif rule.extraction_type == 'after_pattern' %}bg-info{% elif rule.extraction_type == 'nlp' %}bg-success{% endif %}">
+                                    {{ rule.extraction_type }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if rule.instructions %}
+                                <div class="text-break" style="max-width: 300px;">
+                                    {{ rule.instructions }}
+                                </div>
+                                {% else %}
+                                <span class="text-muted">No instructions</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
     {% endif %}
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function exportToCSV() {
+        const table = document.getElementById('results-table');
+        let csv = [];
+        
+        // Get headers
+        let headers = [];
+        const headerCells = table.querySelectorAll('thead th');
+        headerCells.forEach(cell => {
+            headers.push(cell.textContent.trim());
+        });
+        csv.push(headers.join(','));
+        
+        // Get rows
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            let rowData = [];
+            const cells = row.querySelectorAll('td');
+            
+            // Field name (first column)
+            const fieldBadge = cells[0].querySelector('.badge');
+            rowData.push('"' + fieldBadge.textContent.trim() + '"');
+            
+            // Document name (second column)
+            const documentLink = cells[1].querySelector('a');
+            rowData.push('"' + documentLink.textContent.trim() + '"');
+            
+            // Page number (third column)
+            rowData.push('"' + cells[2].textContent.trim() + '"');
+            
+            // Extracted value (fourth column)
+            rowData.push('"' + cells[3].textContent.trim().replace(/"/g, '""') + '"');
+            
+            // Context (fifth column) - clean up pre formatting
+            const contextText = cells[4].textContent.trim().replace(/\s+/g, ' ').replace(/"/g, '""');
+            rowData.push('"' + contextText + '"');
+            
+            csv.push(rowData.join(','));
+        });
+        
+        // Download CSV
+        const csvContent = 'data:text/csv;charset=utf-8,' + csv.join('\n');
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement('a');
+        link.setAttribute('href', encodedUri);
+        link.setAttribute('download', 'extraction_results.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    }
+</script>
 {% endblock %}

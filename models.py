@@ -1,5 +1,5 @@
 import datetime
-from app import db
+from database import db
 
 
 class Document(db.Model):
@@ -11,7 +11,6 @@ class Document(db.Model):
     page_count = db.Column(db.Integer, default=0)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     
-    # Relationships
     pages = db.relationship('Page', backref='document', lazy=True, cascade='all, delete-orphan')
     
     def __repr__(self):
@@ -27,7 +26,7 @@ class Page(db.Model):
     content = db.Column(db.Text, nullable=True)
     
     def __repr__(self):
-        return f'<Page {self.page_number} of Document {self.document_id}>'
+        return f'<Page {self.document_id}:{self.page_number}>'
 
 
 class ExtractionRule(db.Model):
@@ -57,9 +56,8 @@ class ExtractionResult(db.Model):
     context = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     
-    # Relationships
     rule = db.relationship('ExtractionRule', backref='results')
     document = db.relationship('Document', backref='extraction_results')
     
     def __repr__(self):
-        return f'<ExtractionResult for Rule {self.rule_id} from Document {self.document_id}>'
+        return f'<ExtractionResult {self.document_id}:{self.rule_id}>'

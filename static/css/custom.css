@@ -1,98 +1,65 @@
-/* Additional custom styles beyond Bootstrap */
+/* Custom CSS for AI Document Processor */
 
-/* Document card styles */
-.document-card {
-  transition: all 0.2s ease-in-out;
+/* Page content pre formatting */
+.page-content-pre {
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    background-color: rgba(33, 37, 41, 0.8);
+    border-radius: 0.25rem;
+    padding: 1rem;
+    font-size: 0.9rem;
 }
 
-.document-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+/* Improve table readability */
+.table td {
+    vertical-align: middle;
 }
 
-/* Page content styles */
-.page-content {
-  font-family: monospace;
-  white-space: pre-wrap;
-  max-height: 300px;
-  overflow-y: auto;
+/* Custom styles for extraction badges */
+.badge.bg-success {
+    background-color: #20c997 !important;
 }
 
-/* Results table styles */
-.results-table th {
-  position: sticky;
-  top: 0;
-  background-color: var(--bs-dark);
-  z-index: 10;
+/* Custom fade effect for alerts */
+.alert-dismissible {
+    animation: fadeIn 0.5s;
 }
 
-/* Process steps */
-.process-step {
-  position: relative;
-  padding-bottom: 2rem;
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
-.process-step::after {
-  content: '';
-  position: absolute;
-  top: 3rem;
-  left: 50%;
-  height: calc(100% - 3rem);
-  width: 2px;
-  background-color: var(--bs-primary);
-  transform: translateX(-50%);
+/* Custom file preview container */
+#preview-container .border {
+    transition: all 0.3s ease;
 }
 
-.process-step:last-child::after {
-  display: none;
+#preview-container .border:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.15);
 }
 
-/* Custom badges */
-.badge-outline-primary {
-  color: var(--bs-primary);
-  border: 1px solid var(--bs-primary);
-  background-color: transparent;
+/* Custom styling for NLP instruction examples */
+.instruction-example {
+    font-style: italic;
+    color: #20c997;
+    margin-bottom: 0.25rem;
 }
 
-.badge-outline-success {
-  color: var(--bs-success);
-  border: 1px solid var(--bs-success);
-  background-color: transparent;
+/* Custom styles for extraction type badges */
+.badge.bg-warning {
+    color: #212529;
 }
 
-/* File preview */
-.file-preview {
-  border: 2px dashed var(--bs-gray);
-  border-radius: 0.5rem;
-  padding: 1.5rem;
-  text-align: center;
-  transition: all 0.2s ease;
+/* Improved navbar styling */
+.navbar-brand {
+    font-weight: 600;
+    letter-spacing: 0.5px;
 }
 
-.file-preview:hover {
-  border-color: var(--bs-primary);
-}
-
-/* Search highlight */
-.search-highlight {
-  background-color: var(--bs-warning);
-  color: var(--bs-dark);
-  padding: 0.1rem 0.2rem;
-  border-radius: 0.2rem;
-}
-
-/* Context display */
-.context-display {
-  max-height: 200px;
-  overflow-y: auto;
-  font-size: 0.9rem;
-  border-left: 3px solid var(--bs-info);
-  padding-left: 0.75rem;
-}
-
-/* Feature icon */
-.feature-icon {
-  width: 4rem;
-  height: 4rem;
-  border-radius: 0.75rem;
+.nav-link.active {
+    font-weight: 600;
 }
